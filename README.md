@@ -1,6 +1,20 @@
-# Simple Web Messenger (Python FastAPI)
+# Simple Secure Messenger
 
-This project is a simple web-based messenger using FastAPI and WebSockets. It provides a basic chat interface and is ready for further development (e.g., adding call features).
+A modern, secure web-based messenger application with chat and video call capabilities, built with FastAPI and WebRTC.
+
+## Features
+- 💬 Real-time chat with WebSocket
+- 🎥 Video/Audio calls using WebRTC
+- 📁 File sharing with previews (images, PDFs, etc.)
+- 🌓 Dark/Light theme with system preference detection
+- ⌨️ Typing indicators
+- 📜 Message history
+- 📱 Responsive design for mobile and desktop
+- 👥 User presence notifications
+
+## Try It Out
+- 🌐 Web Version: [Coming Soon]
+- 📱 Android App: [Download APK](https://github.com/SepehrMohammady/SimpleMessenger/releases)
 
 ## How to Run
 

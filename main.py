@@ -6,8 +6,19 @@ import json
 import base64
 from datetime import datetime
 import mimetypes
+import os
+from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Enable CORS for production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with your domain
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Store messages in memory
 messages = []
@@ -1211,7 +1222,7 @@ class ConnectionManager:
             await websocket.send_text(json.dumps(msg))
 
     async def broadcast_system_message(self, username: str, message: str):
-        timestamp = datetime.now().strftime("%H:%M:%S")
+        timestamp = datetime.now().strftime("%H:%M:%S");
         msg_data = {
             "type": "chat",
             "data": {
@@ -1332,4 +1343,6 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
             await manager.broadcast_system_message(username, "left the chat")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "0.0.0.0")
+    uvicorn.run("main:app", host=host, port=port)
