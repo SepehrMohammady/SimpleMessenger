@@ -1,5 +1,7 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Cookie, Query
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Cookie, Query, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 import uvicorn
 from typing import List, Dict
 import json
@@ -10,6 +12,12 @@ import os
 from starlette.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Setup templates
+templates = Jinja2Templates(directory="templates")
 
 # Enable CORS for production
 app.add_middleware(
@@ -1008,63 +1016,7 @@ html = """
                 pc = new RTCPeerConnection();
                 localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
                 
-                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-                document.getElementById("localVideo").srcObject = localStream;
-
-                pc.onicecandidate = ({candidate}) => {
-                    if (candidate && ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({type: "signal", data: {candidate}}));
-                    }
-                };
-
-                pc.ontrack = (event) => {
-                    document.getElementById("remoteVideo").srcObject = event.streams[0];
-                };
-
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                
-                if (ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({type: "signal", data: {offer}}));
-                }
-            } catch (error) {
-                console.error("Error starting call:", error);
-                endCall();
-            }
-        }
-
-        async function handleSignaling(data) {
-            try {
-                if (data.offer) {
-                    if (!pc) {
-                        pc = new RTCPeerConnection();
-                        pc.onicecandidate = ({candidate}) => {
-                            if (candidate) {
-                                ws.send(JSON.stringify({type: "signal", data: {candidate}}));
-                            }
-                        };
-                        
-                        pc.ontrack = (event) => {
-                            document.getElementById("remoteVideo").srcObject = event.streams[0];
-                        };
-
-                        localStream = await navigator.mediaDevices.getUserMedia({video: true, audio: true});
-                        localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-                        document.getElementById("localVideo").srcObject = localStream;
-                    }
-                    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                    ws.send(JSON.stringify({type: "signal", data: {answer}}));
-                } else if (data.answer) {
-                    await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-                } else if (data.candidate) {
-                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
-                }
-            } catch (error) {
-                console.error("Signaling error:", error);
-            }
-        }
+                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));# Removed invalid JavaScript code from Python file
 
         // Event Listeners
         document.getElementById("messageInput").addEventListener("keypress", (e) => {
@@ -1199,30 +1151,67 @@ class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}  # username -> websocket
         self.user_sessions: Dict[WebSocket, str] = {}  # websocket -> username
+        self.user_languages: Dict[str, str] = {}  # username -> language
 
-    async def connect(self, websocket: WebSocket, username: str):
+    async def connect(self, websocket: WebSocket, username: str, lang: str = "en"):
         await websocket.accept()
         self.active_connections[username] = websocket
         self.user_sessions[websocket] = username
+        self.user_languages[username] = lang
         # Send connection message
-        await self.broadcast_system_message(username, "joined the chat")
+        await self.broadcast_system_message(username, self.get_system_message(lang, "joined"))
         # Send message history
         await self.send_history(websocket)
+        
+    def get_system_message(self, lang: str, key: str) -> str:
+        """Get system message in the specified language"""
+        i18n_data = {
+            "en": {
+                "joined": "joined the chat",
+                "left": "left the chat",
+                "file_too_large": "File too large. Maximum size is 5MB."
+            },            "fa": {
+                "joined": "به چت پیوست",
+                "left": "چت را ترک کرد",
+                "file_too_large": "فایل بزرگ است. حداکثر اندازه 5 مگابایت."
+            }
+        }
+        return i18n_data.get(lang, i18n_data["en"]).get(key, key)
 
     def disconnect(self, websocket: WebSocket):
         if websocket in self.user_sessions:
             username = self.user_sessions[websocket]
+            lang = self.user_languages.get(username, "en")
             del self.active_connections[username]
             del self.user_sessions[websocket]
-            return username
-        return None
+            if username in self.user_languages:
+                del self.user_languages[username]
+            return username, lang
+        return None, "en"
+
+    async def disconnect_user(self, username: str):
+        """Disconnect a user by username (for cleanup purposes)"""
+        if username in self.active_connections:
+            websocket = self.active_connections[username]
+            try:
+                await websocket.close()
+            except:
+                pass  # Connection might already be closed
+            
+            # Clean up all references
+            if username in self.active_connections:
+                del self.active_connections[username]
+            if websocket in self.user_sessions:
+                del self.user_sessions[websocket]
+            if username in self.user_languages:
+                del self.user_languages[username]
 
     async def send_history(self, websocket: WebSocket):
         for msg in messages:
             await websocket.send_text(json.dumps(msg))
 
     async def broadcast_system_message(self, username: str, message: str):
-        timestamp = datetime.now().strftime("%H:%M:%S");
+        timestamp = datetime.now().isoformat()
         msg_data = {
             "type": "chat",
             "data": {
@@ -1235,14 +1224,22 @@ class ConnectionManager:
         # Store message in history
         messages.append(msg_data)
         if len(messages) > MAX_MESSAGES:
-            messages.pop(0)
-        # Broadcast to all
-        msg_str = json.dumps(msg_data);
-        for connection in self.active_connections.values():
-            await connection.send_text(msg_str)
+            messages.pop(0)        # Broadcast to all
+        msg_str = json.dumps(msg_data)
+        disconnected_users = []
+        for user, connection in self.active_connections.items():
+            try:
+                await connection.send_text(msg_str)
+            except Exception as e:
+                print(f"Error sending to {user}: {e}")
+                disconnected_users.append(user)
+        
+        # Clean up disconnected connections
+        for user in disconnected_users:
+            await self.disconnect_user(user)
 
     async def broadcast_message(self, username: str, message: str):
-        timestamp = datetime.now().strftime("%H:%M:%S")
+        timestamp = datetime.now().isoformat()
         msg_data = {
             "type": "chat",
             "data": {
@@ -1254,27 +1251,43 @@ class ConnectionManager:
         # Store message in history
         messages.append(msg_data)
         if len(messages) > MAX_MESSAGES:
-            messages.pop(0)
-        # Broadcast to all
+            messages.pop(0)        # Broadcast to all
         msg_str = json.dumps(msg_data)
-        for connection in self.active_connections.values():
-            await connection.send_text(msg_str)
+        disconnected_users = []
+        for user, connection in self.active_connections.items():
+            try:
+                await connection.send_text(msg_str)
+            except Exception as e:
+                print(f"Error sending message to {user}: {e}")
+                disconnected_users.append(user)
+        
+        # Clean up disconnected connections
+        for user in disconnected_users:
+            await self.disconnect_user(user)
 
     async def broadcast_typing_notification(self, username: str, is_typing: bool):
         msg_data = {
             "type": "typing",
             "data": {
                 "username": username,
-                "isTyping": is_typing
-            }
+                "isTyping": is_typing            }
         }
-        msg_str = json.dumps(msg_data);
+        
+        msg_str = json.dumps(msg_data)
+        disconnected_users = []
         for other_username, connection in self.active_connections.items():
             if other_username != username:
-                await connection.send_text(msg_str)
+                try:
+                    await connection.send_text(msg_str)
+                except Exception as e:
+                    print(f"Error sending typing notification to {other_username}: {e}")
+                    disconnected_users.append(other_username)
+          # Clean up disconnected connections
+        for user in disconnected_users:
+            await self.disconnect_user(user)
 
     async def broadcast_file(self, username: str, file_data: dict):
-        timestamp = datetime.now().strftime("%H:%M:%S")
+        timestamp = datetime.now().isoformat()
         if file_data.get('size', 0) > MAX_FILE_SIZE:
             return False
         
@@ -1291,56 +1304,212 @@ class ConnectionManager:
         messages.append(msg_data)
         if len(messages) > MAX_MESSAGES:
             messages.pop(0)
-            
-        # Broadcast to all
+              # Broadcast to all
         msg_str = json.dumps(msg_data)
-        for connection in self.active_connections.values():
-            await connection.send_text(msg_str)
+        disconnected_users = []
+        for user, connection in self.active_connections.items():
+            try:
+                await connection.send_text(msg_str)
+            except Exception as e:
+                print(f"Error sending file to {user}: {e}")
+                disconnected_users.append(user)
+        
+        # Clean up disconnected connections
+        for user in disconnected_users:
+            await self.disconnect_user(user)
         return True
 
     async def broadcast_signal(self, username: str, signal_data: dict):
-        signal_msg = {
-            "type": "signal",
+        signal_msg = {            "type": "signal",
             "data": signal_data,
             "username": username
         }
-        signal_str = json.dumps(signal_msg);
+        
+        signal_str = json.dumps(signal_msg)
+        disconnected_users = []
         for other_username, connection in self.active_connections.items():
             if other_username != username:
-                await connection.send_text(signal_str)
+                try:
+                    await connection.send_text(signal_str)
+                except Exception as e:
+                    print(f"Error sending signal to {other_username}: {e}")
+                    disconnected_users.append(other_username)
+        
+        # Clean up disconnected connections
+        for user in disconnected_users:
+            await self.disconnect_user(user)
 
 manager = ConnectionManager()
 
 @app.get("/")
-async def get(username: str = Query(None)):
-    if not username:
-        return HTMLResponse(login_html)
-    return HTMLResponse(html)
+async def get_login(request: Request, lang: str = Query("en")):
+    # Ensure lang is valid
+    if lang not in ["en", "fa"]:
+        lang = "en"
+      # i18n data
+    i18n_data = {
+        "en": {
+            "login": {
+                "title": "Simple Messenger",
+                "username_placeholder": "Enter your username",
+                "join_button": "Join Chat",
+                "validation": {
+                    "required": "Username is required",
+                    "min_length": "Username must be at least 3 characters",
+                    "max_length": "Username must be less than 15 characters",
+                    "invalid_chars": "Username can only contain letters and numbers"
+                }
+            },
+            "pwa": {
+                "install": "Install App"
+            }
+        },
+        "fa": {
+            "login": {
+                "title": "پیام‌رسان ساده",
+                "username_placeholder": "نام کاربری خود را وارد کنید",
+                "join_button": "ورود به چت",
+                "validation": {
+                    "required": "نام کاربری الزامی است",
+                    "min_length": "نام کاربری باید حداقل ۳ کاراکتر باشد",
+                    "max_length": "نام کاربری باید کمتر از ۱۵ کاراکتر باشد",
+                    "invalid_chars": "نام کاربری فقط می‌تواند شامل حروف و اعداد باشد"
+                }
+            },
+            "pwa": {
+                "install": "نصب اپلیکیشن"
+            }
+        }
+    }
+    
+    return templates.TemplateResponse("login.html", {
+        "request": request,
+        "i18n": i18n_data[lang],
+        "lang": lang
+    })
 
-@app.websocket("/ws/{username}")
-async def websocket_endpoint(websocket: WebSocket, username: str):
-    await manager.connect(websocket, username)
+@app.get("/chat")
+async def get_chat(request: Request, username: str = Query(...), lang: str = Query("en")):
+    # Ensure lang is valid
+    if lang not in ["en", "fa"]:
+        lang = "en"
+    
+    # i18n data
+    i18n_data = {
+        "en": {            "chat": {
+                "status": {
+                    "connecting": "Connecting...",
+                    "connected": "Connected",
+                    "disconnected": "Disconnected",
+                    "error": "Connection Error"
+                },                "message_placeholder": "Type a message...",
+                "send_button": "Send Message",
+                "attach_button": "Attach",
+                "call_button": "Start Video Call",                "files": {
+                    "too_large": "File too large",
+                    "send_error": "Error sending file",
+                    "read_error": "Error reading file",
+                    "no_file_chosen": "No file chosen",
+                    "file_selected": "File selected",
+                    "download": "Download"
+                },
+                "typing": {
+                    "single": "{username} is typing...",
+                    "multiple": "{usernames} are typing..."
+                },                "call": {
+                    "start_error": "Error starting call",
+                    "permission_error": "Camera and microphone access required for video calls"
+                },"system": {
+                    "joined": "joined the chat",
+                    "left": "left the chat",
+                    "file_too_large": "File too large. Maximum size is 5MB."
+                },
+                "video": {
+                    "you": "You",
+                    "remote_user": "Remote User"
+                }
+            },            "theme": {
+                "toggle": "Toggle Theme"
+            },
+            "pwa": {
+                "install": "Install App"
+            }
+        },
+        "fa": {            "chat": {
+                "status": {
+                    "connecting": "در حال اتصال...",
+                    "connected": "متصل",
+                    "disconnected": "قطع شده",
+                    "error": "خطای اتصال"
+                },                "message_placeholder": "پیام خود را بنویسید...",
+                "send_button": "ارسال پیام",
+                "attach_button": "پیوست",
+                "call_button": "شروع تماس ویدیویی",                "files": {
+                    "too_large": "فایل بزرگ است",
+                    "send_error": "خطا در ارسال فایل",
+                    "read_error": "خطا در خواندن فایل",
+                    "no_file_chosen": "فایلی انتخاب نشده",
+                    "file_selected": "فایل انتخاب شد",
+                    "download": "دانلود"
+                },
+                "typing": {
+                    "single": "{username} در حال تایپ است...",
+                    "multiple": "{usernames} در حال تایپ هستند..."
+                },                "call": {
+                    "start_error": "خطا در شروع تماس",
+                    "permission_error": "دسترسی به دوربین و میکروفون برای تماس ویدیویی ضروری است"
+                },"system": {
+                    "joined": "به چت پیوست",
+                    "left": "چت را ترک کرد",
+                    "file_too_large": "فایل بزرگ است. حداکثر اندازه 5 مگابایت."
+                },
+                "video": {
+                    "you": "شما",
+                    "remote_user": "کاربر دیگر"
+                }
+            },            "theme": {
+                "toggle": "تغییر تم"
+            },
+            "pwa": {
+                "install": "نصب اپلیکیشن"
+            }
+        }
+    }
+    
+    return templates.TemplateResponse("chat.html", {
+        "request": request,
+        "username": username,
+        "i18n": i18n_data[lang],
+        "lang": lang
+    })
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket, username: str = Query(...), lang: str = Query("en")):
+    await manager.connect(websocket, username, lang)
     try:
         while True:
             data = await websocket.receive_text()
             msg = json.loads(data)
             if msg["type"] == "chat":
                 await manager.broadcast_message(username, msg["data"])
+            elif msg["type"] == "message":
+                await manager.broadcast_message(username, msg["content"])
             elif msg["type"] == "signal":
                 await manager.broadcast_signal(username, msg["data"])
             elif msg["type"] == "file":
                 success = await manager.broadcast_file(username, msg["data"])
                 if not success:
+                    lang = manager.user_languages.get(username, "en")
                     await websocket.send_text(json.dumps({
                         "type": "error",
-                        "data": "File too large. Maximum size is 5MB."
+                        "data": manager.get_system_message(lang, "file_too_large")
                     }))
             elif msg["type"] == "typing":
                 await manager.broadcast_typing_notification(username, msg["data"]["isTyping"])
     except WebSocketDisconnect:
-        username = manager.disconnect(websocket)
+        username, lang = manager.disconnect(websocket)
         if username:
-            await manager.broadcast_system_message(username, "left the chat")
+            await manager.broadcast_system_message(username, manager.get_system_message(lang, "left"))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))

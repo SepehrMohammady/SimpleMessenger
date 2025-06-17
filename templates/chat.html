@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>    <title>Chat - Simple Messenger</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/png" href="/static/icons/icon-192x192.png">
+    <meta name="theme-color" content="#0d6efd">    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+    <style>
+        /* Ensure Vazirmatn font is loaded */
+        @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+    <style>
+        /* Modern forced colors mode */
+        @supports (forced-colors: active) {
+            :root {
+                --bg-primary: Canvas;
+                --bg-secondary: Canvas;
+                --text-primary: CanvasText;
+                --text-secondary: GrayText;
+                --accent-color: AccentColor;
+                --border-color: ButtonBorder;
+            }
+            
+            button {
+                color: ButtonText;
+                background-color: ButtonFace;
+                border: 1px solid ButtonBorder;
+            }
+            
+            input, .message-input {
+                color: FieldText;
+                background-color: Field;
+                border: 1px solid ButtonBorder;
+            }
+            
+            .message {
+                background-color: Canvas;
+                color: CanvasText;
+                border: 1px solid ButtonBorder;
+            }
+
+            .system-message {
+                background-color: Canvas;
+                color: GrayText;
+            }
+
+            .btn {
+                background-color: ButtonFace;
+                color: ButtonText;
+            }
+
+            .btn-icon {
+                background-color: transparent;
+                color: ButtonText;
+            }
+
+            .btn-icon:hover {
+                background-color: ButtonFace;
+                color: AccentColor;
+            }
+
+            .status {
+                color: GrayText;
+            }
+
+            .status[data-state="connected"] {
+                color: AccentColor;
+            }
+
+            .status[data-state="error"] {
+                color: Mark;
+            }
+
+            .call-controls button {
+                background-color: ButtonFace;
+                color: ButtonText;
+            }
+
+            .call-controls .end-call {
+                background-color: Mark;
+                color: ButtonText;
+            }
+        }
+
+        /* Light theme */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f0f2f5;
+            --text-primary: #1c1e21;
+            --text-secondary: #65676b;
+            --accent-color: #0d6efd;
+            --border-color: #dee2e6;
+        }
+
+        /* Dark theme */
+        [data-theme="dark"] {
+            --bg-primary: #18191a;
+            --bg-secondary: #242526;
+            --text-primary: #e4e6eb;
+            --text-secondary: #b0b3b8;
+            --accent-color: #2374e1;
+            --border-color: #3e4042;        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Force Vazirmatn for RTL content */
+        body[dir="rtl"], 
+        body[dir="rtl"] *,
+        [dir="rtl"],
+        [dir="rtl"] * {
+            font-family: 'Vazirmatn', 'IRANSans', 'Tahoma', 'Arial Unicode MS', sans-serif !important;
+        }.header {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .theme-toggle:hover {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .language-selector {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            min-width: 50px;
+        }
+
+        .language-selector:hover {
+            background-color: var(--bg-secondary);
+            border-color: var(--accent-color);
+        }
+
+        .language-selector:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .status[data-state="connected"] {
+            color: #198754;
+        }
+
+        .status[data-state="error"] {
+            color: #dc3545;
+        }
+
+        .loading {
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--text-secondary);
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 100%;
+        }
+
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            max-width: 70%;
+            align-self: flex-start;
+        }
+
+        .message-group.own {
+            align-self: flex-end;
+        }
+
+        .message {
+            background: var(--bg-primary);
+            padding: 0.75rem;
+            border-radius: 12px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+
+        .username {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        .time {
+            color: var(--text-secondary);
+        }
+
+        .system-message {
+            align-self: center;
+            background: var(--bg-primary);
+            color: var(--text-secondary);
+            padding: 0.5rem 1rem;
+            border-radius: 16px;
+            font-size: 0.875rem;
+            max-width: 80%;
+            text-align: center;
+        }
+
+        .typing-indicator {
+            padding: 0.5rem 1rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            font-style: italic;
+            display: none;
+        }
+
+        .input-container {
+            background: var(--bg-primary);
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 1rem;
+            resize: none;
+            min-height: 24px;
+            max-height: 120px;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        .btn {
+            padding: 0.75rem;
+            border: none;
+            border-radius: 50%;
+            background: var(--accent-color);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .btn:hover {
+            background: #0b5ed7;
+        }
+
+        .btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        .btn-icon {
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn-icon:hover {
+            background: var(--bg-secondary);
+            color: var(--accent-color);
+        }        .file-upload {
+            position: relative;
+        }
+
+        .file-upload .btn-icon:hover {
+            background: var(--bg-secondary) !important;
+            color: var(--accent-color) !important;
+        }
+
+        .file-status {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+            text-align: center;
+            min-height: 1rem;
+        }
+
+        .file-preview {
+            max-width: 300px;
+            max-height: 200px;
+            width: auto;
+            height: auto;
+            border-radius: 0.5rem;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .file-preview:hover {
+            transform: scale(1.02);
+        }
+
+        .file-message {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border-radius: 0.5rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .file-info {
+            flex: 1;
+        }
+
+        .file-name {
+            font-weight: 500;
+            margin-bottom: 0.25rem;
+            word-break: break-word;
+        }
+
+        .file-download {
+            color: var(--accent-color);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .file-download:hover {
+            text-decoration: underline;
+        }
+
+        .image-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: pointer;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            background: var(--bg-primary);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            cursor: default;
+        }
+
+        .modal-header {
+            padding: 1rem;
+            background: var(--bg-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .modal-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            z-index: 1000;
+        }
+
+        .video-container.active {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .videos {
+            flex: 1;
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .video-wrapper {
+            position: relative;
+            width: 320px;
+            height: 240px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-wrapper .label {
+            position: absolute;
+            bottom: 0.5rem;
+            left: 0.5rem;
+            color: white;
+            font-size: 0.875rem;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .call-controls {
+            padding: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .call-controls button {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            background: #333;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .call-controls button:hover {
+            background: #444;
+        }
+
+        .call-controls .end-call {
+            background: #dc3545;
+        }
+
+        .call-controls .end-call:hover {
+            background: #bb2d3b;
+        }        /* RTL Support for Farsi */
+        [dir="rtl"] {
+            text-align: right;
+            font-family: 'Vazirmatn', 'IRANSans', 'Tahoma', 'Arial Unicode MS', sans-serif !important;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        [dir="rtl"] .message-input {
+            font-family: 'Vazirmatn', 'IRANSans', 'Tahoma', 'Arial Unicode MS', sans-serif !important;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        [dir="rtl"] .message-content {
+            font-family: 'Vazirmatn', 'IRANSans', 'Tahoma', 'Arial Unicode MS', sans-serif !important;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        [dir="rtl"] .status,
+        [dir="rtl"] .language-selector,
+        [dir="rtl"] button,
+        [dir="rtl"] input,
+        [dir="rtl"] select {
+            font-family: 'Vazirmatn', 'IRANSans', 'Tahoma', 'Arial Unicode MS', sans-serif !important;
+        }
+
+        [dir="rtl"] .message-group.own {
+            align-self: flex-start;
+        }
+
+        [dir="rtl"] .message-group:not(.own) {
+            align-self: flex-end;
+        }
+
+        [dir="rtl"] .input-container {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .message-input {
+            text-align: right;
+        }        [dir="rtl"] .header {
+            direction: rtl;
+        }
+
+        [dir="rtl"] .header-controls {
+            flex-direction: row-reverse;
+        }
+
+        [dir="rtl"] .theme-toggle {
+            order: 2;
+        }
+
+        [dir="rtl"] .language-selector {
+            order: 1;
+        }
+
+        @media (max-width: 768px) {
+            .message-group {
+                max-width: 85%;
+            }
+
+            .videos {
+                flex-direction: column;
+            }
+
+            .video-wrapper {
+                width: 100%;
+                max-width: 480px;
+            }
+        }
+
+        /* Image modal styles */
+        .image-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+        }
+
+        .modal-content {
+            position: relative;
+            max-width: 90%;
+            max-height: 90%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background: #f1f1f1;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .modal-title {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-image {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+    </style>
+</head>
+<body dir="{% if lang == 'fa' %}rtl{% else %}ltr{% endif %}">    <div class="header">
+        <div class="status" id="status" data-state="connecting">
+            <div class="loading"></div>
+            {{ i18n.chat.status.connecting }}
+        </div>
+    
+        <div class="header-controls">
+            <select class="language-selector" id="languageSelector" onchange="changeLanguage(this.value)">
+                <option value="en" {% if lang == 'en' %}selected{% endif %}>EN</option>
+                <option value="fa" {% if lang == 'fa' %}selected{% endif %}>فا</option>
+            </select>
+            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="{{ i18n.theme.toggle }}">
+                <svg viewBox="0 0 24 24" width="24" height="24" class="theme-icon">
+                    <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="chat-container">
+            <div class="messages" id="chat"></div>
+            <div class="typing-indicator" id="typingIndicator"></div>            <div class="input-container">                <input type="text" id="messageInput" class="message-input" 
+                       placeholder="{{ i18n.chat.message_placeholder }}" autocomplete="off"/>
+                <button class="btn btn-icon" onclick="sendMessage()" title="{{ i18n.chat.send_button }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-width="2" 
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button class="btn btn-icon" onclick="startCall()" title="{{ i18n.chat.call_button }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M23 7l-7 5 7 5V7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" stroke-width="2"/>
+                    </svg>
+                </button>                <div class="file-upload">
+                    <button type="button" class="btn btn-icon" onclick="document.getElementById('fileInput').click()" title="{{ i18n.chat.attach_button }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 16.2a2 2 0 0 1-2.83-2.83l8.49-8.49" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <input type="file" id="fileInput" onchange="handleFileSelect(event)" style="display: none;"/>
+                </div>
+                <div id="fileStatus" class="file-status">{{ i18n.chat.files.no_file_chosen }}</div>
+            </div>
+        </div>
+        <div id="fileInfo"></div>
+    </div>
+
+    <div class="video-container" id="videoContainer">
+        <div class="videos">            <div class="video-wrapper">
+                <video id="localVideo" autoplay muted playsinline></video>            <div class="label">{{ i18n.chat.video.you }}</div>
+            </div>
+            <div class="video-wrapper">
+                <video id="remoteVideo" autoplay playsinline></video>
+                <div class="label">{{ i18n.chat.video.remote_user }}</div>
+            </div>
+        </div>
+        <div class="call-controls">
+            <button onclick="toggleMute()" id="muteBtn">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke-width="2"/>
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" stroke-width="2"/>
+                </svg>
+            </button>
+            <button onclick="toggleVideo()" id="videoBtn">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor">
+                    <rect x="2" y="7" width="20" height="10" rx="2" ry="2" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="3" stroke-width="2"/>
+                </svg>
+            </button>
+            <button class="end-call" onclick="endCall()">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor">
+                    <path d="M22 2L2 22M2 2l20 20" stroke-width="2"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables and constants
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        const TYPING_DEBOUNCE = 1000;
+        const TYPING_NOTIFICATION_INTERVAL = 3000;
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        
+        // Make i18n data available to JavaScript
+        const i18n = {{ i18n | tojson | safe }};
+        
+        // WebSocket state
+        let ws = null;
+        let reconnectAttempts = 0;
+        let isConnected = false;
+        
+        // Chat state
+        let isTyping = false;
+        let typingTimeout = null;
+        let lastTypingNotification = 0;
+        let userTyping = new Set();
+        
+        // File handling state
+        let selectedFile = null;
+        
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function expandImage(src, filename) {
+            // Create modal overlay
+            const modal = document.createElement('div');
+            modal.className = 'image-modal';
+            modal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <span class="modal-title">${filename}</span>
+                        <button class="modal-close" onclick="this.closest('.image-modal').remove()">&times;</button>
+                    </div>
+                    <img src="${src}" alt="${filename}" class="modal-image">
+                </div>
+            `;
+            
+            // Add click to close functionality
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            };
+            
+            document.body.appendChild(modal);
+        }
+
+        // WebRTC state
+        let pc = null;
+        let localStream = null;
+        let isAudioMuted = false;
+        let isVideoMuted = false;        // Initialize everything when the page loads
+        (function init() {
+            try {                // Check font loading
+                if (document.fonts) {
+                    document.fonts.ready.then(() => {
+                        console.log('All fonts loaded successfully');
+                        const isRTL = document.body.dir === 'rtl' || document.documentElement.dir === 'rtl';
+                        if (isRTL) {
+                            console.log('RTL mode active - Farsi fonts should be visible');
+                            // Force font refresh
+                            document.body.style.fontFamily = "'Vazirmatn', 'IRANSans', 'Tahoma', 'Arial Unicode MS', sans-serif";
+                        }
+                    });
+                    
+                    // Try to load Vazirmatn font specifically
+                    const vazirmFont = new FontFace('Vazirmatn', "url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/fonts/webfonts/Vazirmatn-Regular.woff2')");
+                    vazirmFont.load().then(() => {
+                        document.fonts.add(vazirmFont);
+                        console.log('Vazirmatn font loaded successfully');
+                        // Apply font immediately for RTL content
+                        if (document.body.dir === 'rtl' || document.documentElement.dir === 'rtl') {
+                            const style = document.createElement('style');
+                            style.textContent = `
+                                [dir="rtl"], [dir="rtl"] * {
+                                    font-family: 'Vazirmatn', 'IRANSans', 'Tahoma', 'Arial Unicode MS', sans-serif !important;
+                                }
+                            `;
+                            document.head.appendChild(style);
+                        }
+                    }).catch(err => {
+                        console.warn('Failed to load Vazirmatn font:', err);
+                    });
+                }
+                
+                const username = new URLSearchParams(window.location.search).get('username');
+                if (!username) {
+                    window.location.href = '/';
+                    return;
+                }
+                initializeWebSocket(username);
+                setupEventListeners();
+                initializeTheme();
+                initializePWA();            } catch (error) {
+                console.error('Initialization error:', error);
+                updateStatus('error', 'Connection error');
+            }
+        })();
+
+        function updateStatus(state, message) {
+            const statusElement = document.getElementById("status");
+            statusElement.dataset.state = state;
+            statusElement.innerHTML = state === 'connecting' 
+                ? '<div class="loading"></div>' + message
+                : message;
+        }        function initializeWebSocket(username) {
+            try {
+                if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
+                    return; // Already connected or connecting
+                }                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const lang = new URLSearchParams(window.location.search).get('lang') || 'en';
+                const wsURL = `${protocol}//${window.location.host}/ws?username=${encodeURIComponent(username)}&lang=${encodeURIComponent(lang)}`;
+                ws = new WebSocket(wsURL);
+
+                ws.onopen = () => {
+                    console.log('WebSocket connected');
+                    updateStatus('connected', i18n.chat.status.connected);
+                    reconnectAttempts = 0;
+                    // Reactivate UI elements
+                    enableMessageInput(true);
+                };
+
+                ws.onclose = (event) => {
+                    console.log('WebSocket closed:', event.code, event.reason);
+                    updateStatus('disconnected', i18n.chat.status.disconnected);
+                    enableMessageInput(false);
+                    
+                    // Don't reconnect if it was a normal closure
+                    if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                        console.log(`Reconnecting in ${delay}ms... (attempt ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
+                        setTimeout(() => {
+                            reconnectAttempts++;
+                            initializeWebSocket(username);
+                        }, delay);
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    updateStatus('error', i18n.chat.status.error);
+                    enableMessageInput(false);
+                };                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        console.log('Received message:', data.type, data);                          switch (data.type) {
+                            case 'chat':
+                            case 'message':
+                                appendMessage(data.data || data);
+                                break;
+                            case 'system':
+                                appendSystemMessage(data.content);
+                                break;
+                            case 'typing':
+                                handleTypingIndicator(data.username, data.isTyping);
+                                break;                            case 'file':
+                                handleFileMessage(data.data);
+                                break;                            case 'signal':
+                                console.log('Received WebRTC signal:', data);
+                                handleSignal(data.data);
+                                break;
+                            case 'error':
+                                console.error('Server error:', data.message || data.data);
+                                alert(data.message || data.data || 'Unknown error');
+                                break;
+                            default:
+                                console.warn('Unknown message type:', data.type, data);
+                        }
+                    } catch (error) {
+                        console.error('Message parsing error:', error, 'Raw data:', event.data);
+                    }
+                };
+            } catch (error) {
+                console.error('WebSocket initialization error:', error);
+                updateStatus('error', i18n.chat.status.error);
+                enableMessageInput(false);
+            }
+        }
+
+        function enableMessageInput(enabled) {
+            const messageInput = document.getElementById('messageInput');
+            const sendButton = messageInput.nextElementSibling;
+            messageInput.disabled = !enabled;
+            sendButton.disabled = !enabled;
+            if (!enabled) {
+                userTyping.clear();
+                document.getElementById('typingIndicator').style.display = 'none';
+            }
+        }
+
+        function isWebSocketReady() {
+            return ws && ws.readyState === WebSocket.OPEN;
+        }
+
+        function safeSendWebSocket(data) {
+            if (!isWebSocketReady()) {
+                console.warn('Attempted to send message while WebSocket is not connected');
+                return false;
+            }
+            try {
+                ws.send(JSON.stringify(data));
+                return true;
+            } catch (error) {
+                console.error('Failed to send message:', error);
+                return false;
+            }
+        }        function handleFileMessage(data) {
+            const chat = document.getElementById('chat');
+            const isOwn = data.username === new URLSearchParams(window.location.search).get('username');
+            const div = document.createElement('div');
+            div.className = `message-group ${isOwn ? 'own' : ''}`;
+            
+            // Handle both 'type' and 'mimetype' fields for backward compatibility
+            const fileType = data.type || data.mimetype || '';
+            
+            let content = '';
+            if (fileType.startsWith('image/')) {
+                content = `<img src="${data.content}" alt="${data.filename}" class="file-preview" onclick="expandImage('${data.content}', '${escapeHtml(data.filename)}')">`;
+            } else {
+                content = `<div class="file-message">
+                    ${getFileIcon(fileType)}
+                    <div class="file-info">
+                        <div class="file-name">${escapeHtml(data.filename)}</div>                        <a href="${data.content}" download="${data.filename}" class="file-download">
+                            ${i18n.chat.files.download}
+                        </a>
+                    </div>
+                </div>`;
+            }
+            
+            div.innerHTML = `
+                <div class="message">
+                    <div class="message-header">
+                        <span class="username">${data.username}</span>
+                        <span class="time">${new Date(data.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    <div class="message-content">${content}</div>
+                </div>
+            `;
+            
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function getFileIcon(mimeType) {
+            if (mimeType.startsWith('image/')) {
+                return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+            } else if (mimeType === 'application/pdf') {
+                return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>';
+            }
+            return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
+        }
+
+        function setupEventListeners() {
+            const messageInput = document.getElementById('messageInput');
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            messageInput.addEventListener('input', () => {
+                if (!isTyping) {
+                    isTyping = true;
+                    sendTypingIndicator(true);
+                }
+                
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => {
+                    isTyping = false;
+                    sendTypingIndicator(false);
+                }, TYPING_DEBOUNCE);
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden && isTyping) {
+                    isTyping = false;
+                    sendTypingIndicator(false);
+                }
+            });
+        }        function sendMessage() {
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value.trim();
+            
+            if (message && safeSendWebSocket({
+                type: 'message',
+                content: message
+            })) {
+                messageInput.value = '';
+                isTyping = false;
+                sendTypingIndicator(false);
+            }
+        }
+
+        function appendMessage(data) {
+            const chat = document.getElementById('chat');
+            const isOwn = data.username === new URLSearchParams(window.location.search).get('username');
+            const div = document.createElement('div');
+            div.className = `message-group ${isOwn ? 'own' : ''}`;
+            
+            div.innerHTML = `
+                <div class="message">
+                    <div class="message-header">
+                        <span class="username">${data.username}</span>
+                        <span class="time">${new Date(data.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    <div class="message-content">${data.content || data.message}</div>
+                </div>
+            `;
+            
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function appendSystemMessage(content) {
+            const chat = document.getElementById('chat');
+            const div = document.createElement('div');
+            div.className = 'system-message';
+            div.textContent = content;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function handleTypingIndicator(username, isTyping) {
+            if (username === new URLSearchParams(window.location.search).get('username')) {
+                return;
+            }
+
+            if (isTyping) {
+                userTyping.add(username);
+            } else {
+                userTyping.delete(username);
+            }
+
+            const typingIndicator = document.getElementById('typingIndicator');
+            if (userTyping.size > 0) {
+                const users = Array.from(userTyping).join(', ');
+                typingIndicator.textContent = userTyping.size === 1
+                    ? i18n.chat.typing.single.replace('{username}', users)
+                    : i18n.chat.typing.multiple.replace('{usernames}', users);
+                typingIndicator.style.display = 'block';
+            } else {
+                typingIndicator.style.display = 'none';
+            }
+        }        function sendTypingIndicator(isTyping) {
+            const now = Date.now();
+            if (!isTyping || now - lastTypingNotification >= TYPING_NOTIFICATION_INTERVAL) {
+                if (safeSendWebSocket({
+                    type: 'typing',
+                    data: { isTyping: isTyping }
+                })) {
+                    lastTypingNotification = now;
+                }
+            }
+        }
+
+        // File handling
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const fileStatus = document.getElementById('fileStatus');
+            
+            if (!file) {
+                fileStatus.textContent = i18n.chat.files.no_file_chosen;
+                return;
+            }
+
+            if (file.size > MAX_FILE_SIZE) {
+                alert(i18n.chat.files.too_large);
+                event.target.value = '';
+                fileStatus.textContent = i18n.chat.files.no_file_chosen;
+                return;
+            }
+
+            selectedFile = file;
+            fileStatus.textContent = `${i18n.chat.files.file_selected}: ${file.name}`;
+            const reader = new FileReader();
+
+            reader.onload = async (e) => {
+                try {
+                    const success = await safeSendWebSocket({
+                        type: 'file',
+                        data: {
+                            content: e.target.result,
+                            filename: file.name,
+                            type: file.type
+                        }
+                    });                    if (success) {
+                        selectedFile = null;
+                        event.target.value = '';
+                        document.getElementById('fileStatus').textContent = i18n.chat.files.no_file_chosen;
+                    }
+                } catch (error) {
+                    console.error('Error sending file:', error);
+                    alert(i18n.chat.files.send_error);
+                }
+            };            reader.onerror = () => {
+                console.error('Error reading file:', reader.error);
+                alert(i18n.chat.files.read_error);
+                selectedFile = null;
+                event.target.value = '';
+                document.getElementById('fileStatus').textContent = i18n.chat.files.no_file_chosen;
+            };            reader.readAsDataURL(file);
+        }        // WebRTC functions
+        async function startCall() {
+            try {
+                // Don't start call if already in progress
+                if (pc) {
+                    console.log('Call already in progress');
+                    return;
+                }
+                
+                // Check media permissions
+                const permissionsGranted = await checkMediaPermissions();
+                if (!permissionsGranted) {
+                    return;
+                }
+                
+                document.getElementById('videoContainer').classList.add('active');
+                
+                // Create RTCPeerConnection
+                const configuration = {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                };
+                pc = new RTCPeerConnection(configuration);
+                
+                // Get local media stream
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+                
+                // Add tracks to peer connection
+                localStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
+                });
+                
+                // Show local video
+                document.getElementById('localVideo').srcObject = localStream;
+                
+                // Handle ICE candidates
+                pc.onicecandidate = ({ candidate }) => {
+                    if (candidate) {
+                        console.log('Sending ICE candidate');
+                        safeSendWebSocket({
+                            type: 'signal',
+                            data: { candidate }
+                        });
+                    }
+                };
+                
+                // Handle incoming tracks
+                pc.ontrack = (event) => {
+                    console.log('Received remote stream in startCall:', event.streams[0]);
+                    document.getElementById('remoteVideo').srcObject = event.streams[0];
+                };
+
+                // Create and send offer (only if this is the initiator)
+                console.log('Creating offer');
+                const offer = await pc.createOffer();
+                await pc.setLocalDescription(offer);
+                
+                safeSendWebSocket({
+                    type: 'signal',
+                    data: { offer }
+                });
+            } catch (error) {
+                console.error('Error starting call:', error);
+                alert(i18n.chat.call.start_error);
+                endCall();
+            }
+        }async function handleSignal(data) {
+            try {
+                // Initialize peer connection if we don't have one
+                if (!pc) {
+                    // Create RTCPeerConnection
+                    const configuration = {
+                        iceServers: [
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' }
+                        ]
+                    };
+                    pc = new RTCPeerConnection(configuration);
+                    
+                    // Handle ICE candidates
+                    pc.onicecandidate = ({ candidate }) => {
+                        if (candidate) {
+                            safeSendWebSocket({
+                                type: 'signal',
+                                data: { candidate }
+                            });
+                        }
+                    };
+                    
+                    // Handle incoming tracks
+                    pc.ontrack = (event) => {
+                        console.log('Received remote stream:', event.streams[0]);
+                        document.getElementById('remoteVideo').srcObject = event.streams[0];
+                        document.getElementById('videoContainer').classList.add('active');
+                    };
+                    
+                    // Get local media stream if we don't have it
+                    if (!localStream) {
+                        localStream = await navigator.mediaDevices.getUserMedia({
+                            video: true,
+                            audio: true
+                        });
+                        
+                        // Add tracks to peer connection
+                        localStream.getTracks().forEach(track => {
+                            pc.addTrack(track, localStream);
+                        });
+                        
+                        // Show local video
+                        document.getElementById('localVideo').srcObject = localStream;
+                    }
+                }
+
+                if (data.offer && pc) {
+                    console.log('Received offer, creating answer');
+                    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    safeSendWebSocket({
+                        type: 'signal',
+                        data: { answer }
+                    });
+                } else if (data.answer && pc) {
+                    console.log('Received answer, setting remote description'); 
+                    await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                } else if (data.candidate && pc) {
+                    console.log('Received ICE candidate');
+                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                }
+            } catch (error) {
+                console.error('Error handling signal:', error);
+            }
+        }
+
+        function endCall() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+            
+            document.getElementById('videoContainer').classList.remove('active');
+            document.getElementById('localVideo').srcObject = null;
+            document.getElementById('remoteVideo').srcObject = null;
+            
+            // Reset mute states
+            isAudioMuted = false;
+            isVideoMuted = false;
+            updateCallControls();
+        }        function toggleMute() {
+            if (!localStream) return;
+            isAudioMuted = !isAudioMuted;
+            localStream.getAudioTracks().forEach(track => {
+                track.enabled = !isAudioMuted;
+            });
+            updateCallControls();
+        }
+
+        function toggleVideo() {
+            if (!localStream) return;
+            isVideoMuted = !isVideoMuted;
+            localStream.getVideoTracks().forEach(track => {
+                track.enabled = !isVideoMuted;
+            });
+            updateCallControls();
+        }
+
+        function updateCallControls() {
+            const muteBtn = document.getElementById('muteBtn');
+            const videoBtn = document.getElementById('videoBtn');
+            
+            muteBtn.innerHTML = isAudioMuted 
+                ? '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"><path d="M1 1l22 22M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23M12 19v4M8 23h8"/></svg>'
+                : '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>';
+            
+            videoBtn.innerHTML = isVideoMuted
+                ? '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"><path d="M1 1l22 22M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg>'
+                : '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"><rect x="2" y="7" width="20" height="10" rx="2" ry="2"/><circle cx="12" cy="12" r="3"/></svg>';
+        }
+
+        // Theme handling
+        function initializeTheme() {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const savedTheme = localStorage.getItem('theme');
+            const theme = savedTheme || (prefersDark ? 'dark' : 'light');
+            
+            document.documentElement.setAttribute('data-theme', theme);
+            updateThemeIcon(theme);
+
+            // Listen for system theme changes
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                if (!localStorage.getItem('theme')) {
+                    const newTheme = e.matches ? 'dark' : 'light';
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    updateThemeIcon(newTheme);
+                }
+            });
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+
+        function updateThemeIcon(theme) {
+            const icon = document.querySelector('.theme-icon');
+            icon.innerHTML = theme === 'dark' 
+                ? '<path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>'
+                : '<path fill="currentColor" d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37a.996.996 0 0 0-1.41 0 .996.996 0 0 0 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0a.996.996 0 0 0 0-1.41l-1.06-1.06zm1.06-10.96a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36a.996.996 0 0 0 0-1.41.996.996 0 0 0-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
+        }
+
+        function changeLanguage(lang) {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('lang', lang);
+            window.location.href = currentUrl.toString();
+        }
+
+        // PWA Support
+        function initializePWA() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(registration => console.log('ServiceWorker registered'))
+                    .catch(error => console.error('ServiceWorker error:', error));
+            }
+        }
+
+        // Helper function to check media permissions
+        async function checkMediaPermissions() {
+            try {
+                const permissions = await navigator.permissions.query({name: 'camera'});
+                const micPermissions = await navigator.permissions.query({name: 'microphone'});
+                
+                if (permissions.state === 'denied' || micPermissions.state === 'denied') {
+                    alert(i18n.chat.call.permission_error);
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.log('Permissions API not supported, proceeding with media request');
+                return true;
+            }
+        }
+    </script>
+</body>
+</html>

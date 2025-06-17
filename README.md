@@ -12,10 +12,6 @@ A modern, secure web-based messenger application with chat and video call capabi
 - 📱 Responsive design for mobile and desktop
 - 👥 User presence notifications
 
-## Try It Out
-- 🌐 Web Version: [Coming Soon]
-- 📱 Android App: [Download APK](https://github.com/SepehrMohammady/SimpleMessenger/releases)
-
 ## How to Run
 
 1. Install dependencies:
