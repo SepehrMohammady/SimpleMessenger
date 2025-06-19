@@ -998,10 +998,9 @@
                                 break;
                             case 'typing':
                                 handleTypingIndicator(data.username, data.isTyping);
-                                break;                            case 'file':
+                                break;
+                            case 'file':
                                 handleFileMessage(data);
-                                break;case 'signal':                                console.log('Received WebRTC signal:', data);
-                                handleSignal(data.data, data.username);
                                 break;
                             case 'error':
                                 console.error('Server error:', data.message || data.data);
@@ -1052,14 +1051,20 @@
                 return false;
             }
         }        function handleFileMessage(data) {
+            console.log('Handling file message:', data); // Debug log
             const chat = document.getElementById('chat');
             const isOwn = data.username === new URLSearchParams(window.location.search).get('username');
             const div = document.createElement('div');
             div.className = `message-group ${isOwn ? 'own' : ''}`;
             
-            // Handle both 'type' and 'mimetype' fields for backward compatibility
-            const fileType = data.type || data.mimetype || '';            let content = '';
+            // Use mimetype field from server, not type (which is the message type)
+            const fileType = data.mimetype || '';
+            console.log('File type detected:', fileType); // Debug log
+            console.log('Full data object:', data); // Debug log
+            
+            let content = '';
             if (fileType.startsWith('image/')) {
+                console.log('Creating image preview'); // Debug log
                 content = `
                     <div class="media-preview">
                         <img src="${data.content}" alt="${data.filename}" class="file-preview" onclick="expandImage('${data.content}', '${escapeHtml(data.filename)}')">
@@ -1068,6 +1073,7 @@
                         </div>
                     </div>`;
             } else if (fileType.startsWith('video/')) {
+                console.log('Creating video preview'); // Debug log
                 content = `
                     <div class="media-preview">
                         <video class="file-preview video-preview" controls preload="metadata">
@@ -1082,6 +1088,7 @@
                         </div>
                     </div>`;
             } else if (fileType.startsWith('audio/')) {
+                console.log('Creating audio preview'); // Debug log
                 content = `
                     <div class="media-preview audio-preview">
                         <div class="audio-header">
@@ -1099,6 +1106,7 @@
                         </div>
                     </div>`;
             } else if (fileType === 'application/pdf') {
+                console.log('Creating PDF preview'); // Debug log
                 content = `<div class="file-message pdf-preview">
                     ${getFileIcon(fileType)}
                     <div class="file-info">
@@ -1112,6 +1120,7 @@
                     </div>
                 </div>`;
             } else {
+                console.log('Creating generic file preview'); // Debug log
                 content = `<div class="file-message">
                     ${getFileIcon(fileType)}
                     <div class="file-info">
