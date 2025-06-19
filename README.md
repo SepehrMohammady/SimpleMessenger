@@ -1,33 +1,84 @@
 # Simple Secure Messenger
 
-A modern, secure web-based messenger application with chat and video call capabilities, built with FastAPI and WebRTC.
+A modern, secure web-based messenger application with real-time chat, video calls, and enhanced file sharing capabilities, built with FastAPI and WebRTC.
 
-## Features
-- 💬 Real-time chat with WebSocket
-- 🎥 Video/Audio calls using WebRTC
-- 📁 File sharing with previews (images, PDFs, etc.)
-- 🌓 Dark/Light theme with system preference detection
-- ⌨️ Typing indicators
-- 📜 Message history
-- 📱 Responsive design for mobile and desktop
-- 👥 User presence notifications
+## ✨ Features
 
-## How to Run
+### 💬 **Real-time Communication**
+- Real-time chat with WebSocket
+- Typing indicators with user feedback
+- User presence notifications
+- Message history (in-memory)
 
-1. Install dependencies:
-   ```
+### 🎥 **Video & Audio Calls**
+- Video/Audio calls using WebRTC
+- Camera and microphone controls
+- Mute/unmute functionality
+- Full-screen call interface
+
+### 📁 **Enhanced File Sharing**
+- **Image Previews**: Inline thumbnails with click-to-expand modal
+- **Video Previews**: Inline video player with native controls
+- **Audio Previews**: Inline audio player for music/voice files
+- **PDF Support**: View PDF in browser or download
+- **File Type Detection**: Smart icons for different file types
+- **5MB file size limit** with user-friendly error handling
+
+### 🌐 **User Experience**
+- 🌓 Dark/Light theme with automatic detection
+- 🌍 **Bilingual Support**: English and Persian (Farsi) with proper RTL layout
+- 📱 **Responsive Design**: Works on mobile and desktop
+- 🎨 **Modern UI**: Clean interface with smooth animations
+- ⚡ **Progressive Web App**: Installable with offline capabilities
+
+### 🔧 **Technical Features**
+- Clean, optimized codebase
+- Removed legacy files and dependencies
+- Proper error handling and user feedback
+- WebSocket auto-reconnection
+- Cross-platform compatibility
+
+## 🚀 How to Run
+
+1. **Install dependencies:**
+   ```bash
    pip install -r requirements.txt
    ```
-2. Start the server:
-   ```
+
+2. **Start the server:**
+   ```bash
    uvicorn main:app --reload
    ```
-3. Open your browser and go to `http://localhost:8000`.
 
-## Next Steps
-- Add user authentication
-- Add message history
-- Add WebRTC signaling for calls
+3. **Open your browser:**
+   - Go to `http://localhost:8000`
+   - Enter a username and start chatting!
+
+## 📋 Requirements
+
+- Python 3.8+
+- FastAPI
+- Uvicorn
+- Jinja2
+
+## 🎯 Recent Improvements
+
+- ✅ **Enhanced file preview system** with inline media display
+- ✅ **Removed "No file chosen" text** for cleaner UI
+- ✅ **Added missing i18n translations** for error handling
+- ✅ **Improved file type support** (images, videos, audio, PDF)
+- ✅ **Cleaned up legacy code** and unused dependencies
+- ✅ **Better error handling** for file operations
+
+## 🔮 Future Enhancements
+
+- 🔐 User authentication and authorization
+- 💾 Persistent message history with database
+- 🔒 End-to-end encryption
+- 👥 Multi-room chat support
+- 📤 Advanced file sharing (larger files, cloud storage)
+- 🎬 Screen sharing capabilities
 
 ---
-This project is for personal and family use. For production, add security and privacy features.
+
+**Note**: This project is designed for personal and family use. For production deployment, implement proper security measures, user authentication, and data persistence.

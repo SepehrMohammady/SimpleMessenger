@@ -222,10 +222,12 @@ async def get_chat(request: Request, username: str = Query(...), lang: str = Que
                     "no_file_chosen": "No file chosen",
                     "upload_success": "File uploaded successfully",
                     "upload_error": "Error uploading file",
+                    "send_error": "Error sending file",
+                    "read_error": "Error reading file",
                     "download": "Download",
                     "too_large": "File too large (max 5MB)",
                     "file_selected": "File selected"
-                },                "video": {
+                },"video": {
                     "you": "You",
                     "remote": "Remote",
                     "remote_user": "Remote User",
@@ -271,10 +273,12 @@ async def get_chat(request: Request, username: str = Query(...), lang: str = Que
                     "no_file_chosen": "فایلی انتخاب نشده",
                     "upload_success": "فایل با موفقیت آپلود شد",
                     "upload_error": "خطا در آپلود فایل",
+                    "send_error": "خطا در ارسال فایل",
+                    "read_error": "خطا در خواندن فایل",
                     "download": "دانلود",
                     "too_large": "فایل خیلی بزرگ است (حداکثر ۵ مگابایت)",
                     "file_selected": "فایل انتخاب شده"
-                },                "video": {
+                },"video": {
                     "you": "شما",
                     "remote": "طرف مقابل",
                     "remote_user": "کاربر طرف مقابل",
