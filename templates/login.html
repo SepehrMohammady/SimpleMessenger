@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="A real-time web messenger with chat and video call capabilities">
-    <meta name="theme-color" content="#0d6efd">
-    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#0d6efd">    <link rel="manifest" href="/static/manifest.json">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="/static/icons/icon-192x192.png">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="Simple Messenger">
@@ -461,18 +463,9 @@
         window.addEventListener('appinstalled', () => {
             installButton.style.display = 'none';
             deferredPrompt = null;
-            console.log('PWA was installed');
-        });
+            console.log('PWA was installed');        });
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/static/sw.js')
-                .then(registration => {
-                    console.log('ServiceWorker registration successful');
-                })
-                .catch(err => {
-                    console.error('ServiceWorker registration failed:', err);
-                });
-        }        // Initialize
+        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('themeToggle').addEventListener('click', toggleTheme);
             document.getElementById('username').addEventListener('input', () => {

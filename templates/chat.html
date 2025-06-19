@@ -4,14 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="manifest" href="/static/manifest.json">
-    <link rel="icon" type="image/png" href="/static/icons/icon-192x192.png">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192x192.png">
     <meta name="theme-color" content="#0d6efd">    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
-    <style>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">    <style>
         /* Ensure Vazirmatn font is loaded */
         @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+    </style>
     <style>
         /* Modern forced colors mode */
         @supports (forced-colors: active) {
@@ -186,10 +187,13 @@
             align-items: center;
             gap: 0.5rem;
             color: var(--text-secondary);
+        }        .status[data-state="connected"] {
+            color: #198754;
         }
 
-        .status[data-state="connected"] {
-            color: #198754;
+        .status[data-state="disconnected"] {
+            color: #dc3545;
+            font-weight: bold;
         }
 
         .status[data-state="error"] {
@@ -481,30 +485,30 @@
         .video-container.active {
             display: flex;
             flex-direction: column;
-        }
-
-        .videos {
+        }        .videos {
             flex: 1;
             display: flex;
-            gap: 1rem;
-            padding: 1rem;
+            gap: 2rem;
+            padding: 2rem;
             justify-content: center;
             align-items: center;
-        }
-
-        .video-wrapper {
+            flex-wrap: wrap;
+        }.video-wrapper {
             position: relative;
-            width: 320px;
-            height: 240px;
+            width: 400px;
+            height: 300px;
             background: #000;
             border-radius: 8px;
             overflow: hidden;
+            border: 2px solid #444;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
 
         .video-wrapper video {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            background-color: #222;
         }
 
         .video-wrapper .label {
@@ -724,11 +728,11 @@
             </div>
         </div>
         <div id="fileInfo"></div>
-    </div>
-
-    <div class="video-container" id="videoContainer">
-        <div class="videos">            <div class="video-wrapper">
-                <video id="localVideo" autoplay muted playsinline></video>            <div class="label">{{ i18n.chat.video.you }}</div>
+    </div>    <div class="video-container" id="videoContainer">
+        <div class="videos">
+            <div class="video-wrapper">
+                <video id="localVideo" autoplay muted playsinline></video>
+                <div class="label">{{ i18n.chat.video.you }}</div>
             </div>
             <div class="video-wrapper">
                 <video id="remoteVideo" autoplay playsinline></video>
@@ -809,13 +813,13 @@
             };
             
             document.body.appendChild(modal);
-        }
-
-        // WebRTC state
-        let pc = null;
+        }        // WebRTC state
+        window.pc = null; // Using window.pc to avoid scope issues
         let localStream = null;
+        let remoteUsername = null; // Track who we're calling
+        let candidateBuffer = []; // Buffer ICE candidates until remote description is set
         let isAudioMuted = false;
-        let isVideoMuted = false;        // Initialize everything when the page loads
+        let isVideoMuted = false;// Initialize everything when the page loads
         (function init() {
             try {                // Check font loading
                 if (document.fonts) {
@@ -874,8 +878,7 @@
                 if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
                     return; // Already connected or connecting
                 }                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const lang = new URLSearchParams(window.location.search).get('lang') || 'en';
-                const wsURL = `${protocol}//${window.location.host}/ws?username=${encodeURIComponent(username)}&lang=${encodeURIComponent(lang)}`;
+                const lang = new URLSearchParams(window.location.search).get('lang') || 'en';                const wsURL = `${protocol}//${window.location.host}/ws/${encodeURIComponent(username)}?lang=${encodeURIComponent(lang)}`;
                 ws = new WebSocket(wsURL);
 
                 ws.onopen = () => {
@@ -906,10 +909,15 @@
                     console.error('WebSocket error:', error);
                     updateStatus('error', i18n.chat.status.error);
                     enableMessageInput(false);
-                };                ws.onmessage = (event) => {
+                };                ws.onmessage = async (event) => {
                     try {
                         const data = JSON.parse(event.data);
-                        console.log('Received message:', data.type, data);                          switch (data.type) {
+                        console.log('Received message:', data.type, data);
+                        switch (data.type) {
+                            case 'signal':
+                                console.log('Received WebRTC signal:', data);
+                                await handleSignal(data.data, data.username);
+                                break;
                             case 'chat':
                             case 'message':
                                 appendMessage(data.data || data);
@@ -920,10 +928,9 @@
                             case 'typing':
                                 handleTypingIndicator(data.username, data.isTyping);
                                 break;                            case 'file':
-                                handleFileMessage(data.data);
-                                break;                            case 'signal':
-                                console.log('Received WebRTC signal:', data);
-                                handleSignal(data.data);
+                                handleFileMessage(data);
+                                break;case 'signal':                                console.log('Received WebRTC signal:', data);
+                                handleSignal(data.data, data.username);
                                 break;
                             case 'error':
                                 console.error('Server error:', data.message || data.data);
@@ -958,13 +965,16 @@
             return ws && ws.readyState === WebSocket.OPEN;
         }
 
+        // Send signal via WebSocket tagged with sender
         function safeSendWebSocket(data) {
+            const username = new URLSearchParams(window.location.search).get('username');
+            const payload = { ...data, username };
             if (!isWebSocketReady()) {
                 console.warn('Attempted to send message while WebSocket is not connected');
                 return false;
             }
             try {
-                ws.send(JSON.stringify(data));
+                ws.send(JSON.stringify(payload));
                 return true;
             } catch (error) {
                 console.error('Failed to send message:', error);
@@ -1163,25 +1173,30 @@
                 console.error('Error reading file:', reader.error);
                 alert(i18n.chat.files.read_error);
                 selectedFile = null;
-                event.target.value = '';
-                document.getElementById('fileStatus').textContent = i18n.chat.files.no_file_chosen;
-            };            reader.readAsDataURL(file);
-        }        // WebRTC functions
+                event.target.value = '';                document.getElementById('fileStatus').textContent = i18n.chat.files.no_file_chosen;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // WebRTC functions
         async function startCall() {
             try {
-                // Don't start call if already in progress
-                if (pc) {
-                    console.log('Call already in progress');
-                    return;
+                // Clear any previous call state
+                if (window.pc) {
+                    console.log('Ending previous call before starting new one');
+                    endCall();
                 }
                 
-                // Check media permissions
+                // Reset remote username
+                remoteUsername = null;
+                  // Check media permissions
                 const permissionsGranted = await checkMediaPermissions();
                 if (!permissionsGranted) {
                     return;
                 }
                 
                 document.getElementById('videoContainer').classList.add('active');
+                console.log('Video container activated:', document.getElementById('videoContainer').classList.contains('active'));
                 
                 // Create RTCPeerConnection
                 const configuration = {
@@ -1190,24 +1205,30 @@
                         { urls: 'stun:stun1.l.google.com:19302' }
                     ]
                 };
-                pc = new RTCPeerConnection(configuration);
                 
-                // Get local media stream
+                // Initialize the peer connection if it doesn't exist
+                window.pc = new RTCPeerConnection(configuration);
+                  // Get local media stream
+                console.log('Requesting user media...');
                 localStream = await navigator.mediaDevices.getUserMedia({
                     video: true,
                     audio: true
                 });
-                
-                // Add tracks to peer connection
+                console.log('Got local stream:', localStream);
+                  // Add tracks to peer connection
                 localStream.getTracks().forEach(track => {
-                    pc.addTrack(track, localStream);
+                    console.log('Adding track:', track.kind);
+                    window.pc.addTrack(track, localStream);
                 });
                 
                 // Show local video
-                document.getElementById('localVideo').srcObject = localStream;
+                console.log('Setting local video source...');
+                const localVideo = document.getElementById('localVideo');
+                localVideo.srcObject = localStream;
+                console.log('Local video element:', localVideo);
                 
                 // Handle ICE candidates
-                pc.onicecandidate = ({ candidate }) => {
+                window.pc.onicecandidate = ({ candidate }) => {
                     if (candidate) {
                         console.log('Sending ICE candidate');
                         safeSendWebSocket({
@@ -1218,15 +1239,26 @@
                 };
                 
                 // Handle incoming tracks
-                pc.ontrack = (event) => {
+                window.pc.ontrack = (event) => {
                     console.log('Received remote stream in startCall:', event.streams[0]);
-                    document.getElementById('remoteVideo').srcObject = event.streams[0];
+                    const remoteVideo = document.getElementById('remoteVideo');
+                    remoteVideo.srcObject = event.streams[0];
+                    console.log('Remote video element:', remoteVideo);
+                    console.log('Remote video srcObject set to:', remoteVideo.srcObject);
+                    
+                    // Ensure video is visible
+                    remoteVideo.style.display = 'block';
+                    
+                    // Force a reflow to ensure the video renders
+                    setTimeout(() => {
+                        remoteVideo.play().catch(e => console.error('Error playing remote video:', e));
+                    }, 500);
                 };
-
+                
                 // Create and send offer (only if this is the initiator)
                 console.log('Creating offer');
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
+                const offer = await window.pc.createOffer();
+                await window.pc.setLocalDescription(offer);
                 
                 safeSendWebSocket({
                     type: 'signal',
@@ -1235,85 +1267,73 @@
             } catch (error) {
                 console.error('Error starting call:', error);
                 alert(i18n.chat.call.start_error);
-                endCall();
-            }
-        }async function handleSignal(data) {
+                endCall();            }
+        }
+        
+        async function handleSignal(data, sender) {
+            const myUsername = new URLSearchParams(window.location.search).get('username');
+            if (sender === myUsername) return;
             try {
-                // Initialize peer connection if we don't have one
-                if (!pc) {
-                    // Create RTCPeerConnection
-                    const configuration = {
-                        iceServers: [
-                            { urls: 'stun:stun.l.google.com:19302' },
-                            { urls: 'stun:stun1.l.google.com:19302' }
-                        ]
+                if (!remoteUsername) {
+                    remoteUsername = sender;
+                }
+                // Initialize peer connection if missing
+                if (!window.pc) {
+                    const configuration = { iceServers: [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] };
+                    window.pc = new RTCPeerConnection(configuration);
+                    window.pc.onicecandidate = ({ candidate }) => {
+                        if (candidate) safeSendWebSocket({ type: 'signal', data: { candidate } });
                     };
-                    pc = new RTCPeerConnection(configuration);
-                    
-                    // Handle ICE candidates
-                    pc.onicecandidate = ({ candidate }) => {
-                        if (candidate) {
-                            safeSendWebSocket({
-                                type: 'signal',
-                                data: { candidate }
-                            });
-                        }
-                    };
-                    
-                    // Handle incoming tracks
-                    pc.ontrack = (event) => {
-                        console.log('Received remote stream:', event.streams[0]);
+                    window.pc.ontrack = (event) => {
                         document.getElementById('remoteVideo').srcObject = event.streams[0];
                         document.getElementById('videoContainer').classList.add('active');
                     };
-                    
-                    // Get local media stream if we don't have it
                     if (!localStream) {
-                        localStream = await navigator.mediaDevices.getUserMedia({
-                            video: true,
-                            audio: true
-                        });
-                        
-                        // Add tracks to peer connection
-                        localStream.getTracks().forEach(track => {
-                            pc.addTrack(track, localStream);
-                        });
-                        
-                        // Show local video
+                        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        localStream.getTracks().forEach(track => window.pc.addTrack(track, localStream));
                         document.getElementById('localVideo').srcObject = localStream;
                     }
                 }
-
-                if (data.offer && pc) {
-                    console.log('Received offer, creating answer');
-                    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                    safeSendWebSocket({
-                        type: 'signal',
-                        data: { answer }
-                    });
-                } else if (data.answer && pc) {
-                    console.log('Received answer, setting remote description'); 
-                    await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-                } else if (data.candidate && pc) {
-                    console.log('Received ICE candidate');
-                    await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                // Process signals
+                if (data.offer) {
+                    // Received offer, send answer
+                    await window.pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+                    // Drain buffered ICE candidates
+                    for (const cand of candidateBuffer) {
+                        await window.pc.addIceCandidate(new RTCIceCandidate(cand));
+                    }
+                    candidateBuffer = [];
+                    const answer = await window.pc.createAnswer();
+                    await window.pc.setLocalDescription(answer);
+                    safeSendWebSocket({ type: 'signal', data: { answer } });
+                } else if (data.answer) {
+                    // Received answer, finish connection
+                    await window.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                    // Drain buffered ICE candidates
+                    for (const cand of candidateBuffer) {
+                        await window.pc.addIceCandidate(new RTCIceCandidate(cand));
+                    }
+                    candidateBuffer = [];
+                } else if (data.candidate) {
+                    if (window.pc.remoteDescription && window.pc.remoteDescription.type) {
+                        await window.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                    } else {
+                        // Buffer ICE until remote description is set
+                        candidateBuffer.push(data.candidate);
+                    }
                 }
             } catch (error) {
                 console.error('Error handling signal:', error);
             }
-        }
-
-        function endCall() {
+        }        function endCall() {
             if (localStream) {
                 localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
             }
             
-            if (pc) {
-                pc.close();
-                pc = null;
+            if (window.pc) {
+                window.pc.close();
+                window.pc = null;
             }
             
             document.getElementById('videoContainer').classList.remove('active');
