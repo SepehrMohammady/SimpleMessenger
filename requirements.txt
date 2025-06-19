@@ -1,3 +1,10 @@
-fastapi
-uvicorn
-jinja2
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+jinja2>=3.1.0
+
+# Optional production dependencies (uncomment if needed)
+# gunicorn>=21.2.0         # For production WSGI server
+# redis>=5.0.0             # For message persistence and scaling
+# psycopg2-binary>=2.9.0   # For PostgreSQL database
+# sqlalchemy>=2.0.0        # For database ORM
+# alembic>=1.12.0          # For database migrations

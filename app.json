@@ -1,0 +1,42 @@
+{
+  "name": "Simple Secure Messenger",
+  "description": "A modern, secure web-based messenger with real-time chat, video calls, and file sharing. Supports bilingual interface (English/Persian) with dark/light themes.",
+  "repository": "https://github.com/SepehrMohammady/SimpleMessenger",
+  "logo": "https://cdn-icons-png.flaticon.com/512/1168/1168715.png",
+  "keywords": [
+    "messenger",
+    "chat",
+    "websocket",
+    "webrtc",
+    "video-call",
+    "file-sharing",
+    "fastapi",
+    "python",
+    "real-time",
+    "bilingual"
+  ],
+  "website": "https://github.com/SepehrMohammady/SimpleMessenger",
+  "env": {
+    "PYTHON_VERSION": {
+      "description": "Python runtime version",
+      "value": "3.11.5"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "free"
+    }
+  },
+  "buildpacks": [
+    {
+      "url": "heroku/python"
+    }
+  ],
+  "stack": "heroku-22",
+  "environments": {
+    "test": {},
+    "staging": {},
+    "production": {}
+  }
+}

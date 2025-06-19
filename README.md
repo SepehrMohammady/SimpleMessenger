@@ -33,10 +33,28 @@ A modern, secure web-based messenger application with real-time chat, video call
 
 ### 🔧 **Technical Features**
 - Clean, optimized codebase
-- Removed legacy files and dependencies
+- Docker support for easy deployment
+- Environment variable configuration
 - Proper error handling and user feedback
 - WebSocket auto-reconnection
 - Cross-platform compatibility
+- Production-ready CORS and security headers
+
+## 🚀 **Quick Deploy**
+
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/SepehrMohammady/SimpleMessenger)
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/deploy)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+### **Other Deployment Options:**
+- **Docker**: `docker run -p 8000:8000 ghcr.io/sepehrmohammady/simplemessenger`
+- **Vercel/Netlify**: Serverless deployment ready
+- **VPS**: Complete Nginx configuration included
+- **Local**: Works out of the box with Python 3.8+
+
+> 📖 **Full deployment guide:** See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
 
 ## 🚀 How to Run
 

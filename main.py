@@ -19,19 +19,22 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Setup templates
 templates = Jinja2Templates(directory="templates")
 
+# CORS configuration - can be customized via environment variable
+CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*").split(",")
+
 # Enable CORS for production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with your domain
+    allow_origins=CORS_ORIGINS,  # Can be configured via CORS_ORIGINS env var
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["*"],
 )
 
-# Store messages in memory
+# Store messages in memory (for production, consider using Redis or database)
 messages = []
-MAX_MESSAGES = 100  # Keep last 100 messages
-MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB max file size
+MAX_MESSAGES = int(os.environ.get("MAX_MESSAGES", "100"))  # Keep last N messages
+MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", str(5 * 1024 * 1024)))  # Default 5MB
 
 class ConnectionManager:
     def __init__(self):
