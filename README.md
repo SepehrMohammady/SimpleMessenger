@@ -44,7 +44,7 @@ A modern, secure web-based messenger application with real-time chat, video call
 
 ### **🆓 FREE Options (Recommended):**
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/https://github.com/SepehrMohammady/SimpleMessenger)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?template=https://github.com/SepehrMohammady/SimpleMessenger)
 *Full functionality with WebSockets*
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/SepehrMohammady/SimpleMessenger)

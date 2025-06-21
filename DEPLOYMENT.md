@@ -10,8 +10,9 @@ This project is ready for web deployment! Choose from multiple hosting options b
 
 **🆓 FREE Options:**
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/https://github.com/SepehrMohammady/SimpleMessenger)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?template=https://github.com/SepehrMohammady/SimpleMessenger)
 *Railway: $5 free credit monthly*
+> 💡 **If button fails:** Visit [Railway.app](https://railway.app) → New Project → Deploy from GitHub repo → Select "SimpleMessenger"
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/SepehrMohammady/SimpleMessenger)
 *Render: 750 hours free per month*
@@ -26,6 +27,7 @@ This project is ready for web deployment! Choose from multiple hosting options b
 This project includes platform-specific configuration files for easy deployment:
 
 - **`railway.json`** & **`railway.toml`**: Railway deployment configuration
+- **`nixpacks.toml`**: Railway build configuration (Nixpacks)
 - **`render.yaml`**: Render service configuration  
 - **`app.json`**: Heroku app configuration
 - **`Procfile`**: Process file for Heroku and similar platforms
@@ -82,11 +84,23 @@ heroku open
 
 ### 2. **Railway** (Modern, fast deployment)
 
-1. Visit [Railway.app](https://railway.app)
-2. Connect your GitHub account
-3. Click "Deploy from GitHub repo"
-4. Select this repository
-5. Railway will auto-detect and deploy!
+**Option 1: One-click deploy (if button works):**
+Use the Railway button above.
+
+**Option 2: Manual Railway deployment:**
+1. Visit [Railway.app](https://railway.app) and sign up/login
+2. Click "New Project" 
+3. Choose "Deploy from GitHub repo"
+4. Connect your GitHub account if needed
+5. Search for "SimpleMessenger" or paste: `https://github.com/SepehrMohammady/SimpleMessenger`
+6. Select the repository
+7. Railway will auto-detect settings and deploy!
+
+**Railway will automatically:**
+- Detect Python and install dependencies
+- Use the correct start command from `railway.json`
+- Provide a public URL
+- Handle environment variables
 
 **Build Command:** `pip install -r requirements.txt`  
 **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
@@ -237,6 +251,14 @@ The app includes basic CORS middleware. For production, consider:
 ## 🆘 **Troubleshooting**
 
 ### **Common Issues**
+
+**Railway Deploy Button 404 Error:**
+If the Railway deploy button gives a 404 error:
+1. Visit [Railway.app](https://railway.app) directly
+2. Sign up/login with GitHub
+3. Click "New Project" → "Deploy from GitHub repo"
+4. Search for and select your forked repository
+5. Railway will auto-detect the Python app and deploy
 
 **WebSocket Connection Failed:**
 - Check HTTPS/WSS protocol matching
