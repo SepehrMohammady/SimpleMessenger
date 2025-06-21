@@ -42,18 +42,20 @@ A modern, secure web-based messenger application with real-time chat, video call
 
 ## 🚀 **Quick Deploy**
 
+> 🔄 **Update 2025**: Railway now requires paid plans. **Render** is the best free alternative with full functionality!
+
 ### **🆓 FREE Options (Recommended):**
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?template=https://github.com/SepehrMohammady/SimpleMessenger)
-*Full functionality with WebSockets*
-
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/SepehrMohammady/SimpleMessenger)
-*Full functionality with WebSockets*
+*⭐ **BEST FREE OPTION** - Full functionality with WebSockets*
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SepehrMohammady/SimpleMessenger)
 *⚠️ Limited functionality - polling mode only (no real-time WebSockets)*
 
-### **💰 Paid Option:**
+### **💰 Paid Options:**
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/clone?template=https://github.com/SepehrMohammady/SimpleMessenger)
+*Full functionality - $5/month minimum*
 
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/SepehrMohammady/SimpleMessenger)
 *Full functionality - $5/month minimum*
@@ -67,9 +69,9 @@ A modern, secure web-based messenger application with real-time chat, video call
 
 | Platform | Cost | WebSockets | Real-time Chat | Recommended |
 |----------|------|-----------|----------------|-------------|
-| **Railway** | $5/month free credit | ✅ Full | ✅ Yes | ⭐ **Best** |
-| **Render** | 750 hrs/month free | ✅ Full | ✅ Yes | ⭐ **Great** |
+| **Render** | Free (750hrs/month) | ✅ Full | ✅ Yes | ⭐ **BEST FREE** |
 | **Vercel** | Free | ❌ Polling only | ⚠️ Limited | 🔶 **Basic** |
+| **Railway** | $5/month minimum | ✅ Full | ✅ Yes | 💰 **Paid** |
 | **Heroku** | $5/month minimum | ✅ Full | ✅ Yes | 💰 **Paid** |
 
 > 📖 **Full deployment guide:** See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.

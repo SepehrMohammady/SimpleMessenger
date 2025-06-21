@@ -10,12 +10,16 @@ This project is ready for web deployment! Choose from multiple hosting options b
 
 **🆓 FREE Options:**
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?template=https://github.com/SepehrMohammady/SimpleMessenger)
-*Railway: $5 free credit monthly*
-> 💡 **If button fails:** Visit [Railway.app](https://railway.app) → New Project → Deploy from GitHub repo → Select "SimpleMessenger"
-
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/SepehrMohammady/SimpleMessenger)
-*Render: 750 hours free per month*
+*Render: 750 hours free per month - **RECOMMENDED FREE OPTION***
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SepehrMohammady/SimpleMessenger)
+*⚠️ Limited functionality - polling mode only (no real-time WebSockets)*
+
+**💰 Paid Options:**
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new?template=https://github.com/SepehrMohammady/SimpleMessenger)
+*Railway: Starting at $5/month (no free app deployments)*
 
 **💰 Paid Option:**
 
@@ -38,17 +42,18 @@ This project includes platform-specific configuration files for easy deployment:
 
 ## 🆓 **Recommended FREE Alternatives to Heroku**
 
-### **Railway** (Best overall free option)
-- **Free Tier**: $5 monthly credit (sufficient for most small apps)
-- **Features**: Auto-deployments, custom domains, databases
-- **Deploy**: One-click from GitHub
-
-### **Render** (Most reliable free tier)
+### **Render** (Most reliable free tier) ⭐ **RECOMMENDED**
 - **Free Tier**: 750 hours/month, auto-sleep after 15min inactivity
 - **Features**: Free SSL, auto-deployments, custom domains
 - **Deploy**: Connect GitHub repo directly
+- **WebSocket Support**: ✅ Full real-time chat functionality
 
-### **Vercel** (Best for frontend-focused apps)
+### **Railway** (Now paid only)
+- **⚠️ No Free Tier**: Requires paid plan starting at $5/month
+- **Features**: Auto-deployments, custom domains, databases
+- **Deploy**: One-click from GitHub (requires payment)
+
+### **Vercel** (Limited functionality)
 - **Free Tier**: Generous limits for hobby projects
 - **⚠️ Limitation**: WebSockets not supported (uses polling mode instead)
 - **Features**: Edge network, instant deployments
@@ -82,26 +87,24 @@ heroku open
 
 ---
 
-### 2. **Railway** (Modern, fast deployment)
+### 2. **Railway** (Modern, fast deployment - PAID ONLY)
 
-**Option 1: One-click deploy (if button works):**
-Use the Railway button above.
+**⚠️ Important:** Railway no longer offers free app deployments. You need a paid plan starting at $5/month.
+
+**Option 1: One-click deploy (requires payment):**
+Use the Railway button above, but you'll need to add payment info.
 
 **Option 2: Manual Railway deployment:**
 1. Visit [Railway.app](https://railway.app) and sign up/login
-2. Click "New Project" 
-3. Choose "Deploy from GitHub repo"
-4. Connect your GitHub account if needed
-5. Search for "SimpleMessenger" or paste: `https://github.com/SepehrMohammady/SimpleMessenger`
-6. Select the repository
-7. Railway will auto-detect settings and deploy!
+2. **Add payment method** (required for app deployments)
+3. Click "New Project" 
+4. Choose "Deploy from GitHub repo"
+5. Connect your GitHub account if needed
+6. Search for "SimpleMessenger" or paste: `https://github.com/SepehrMohammady/SimpleMessenger`
+7. Select the repository
+8. Railway will auto-detect settings and deploy!
 
-**Railway will automatically:**
-- Detect Python and install dependencies
-- Use the correct start command from `railway.json`
-- Provide a public URL
-- Handle environment variables
-
+**Cost**: Starting at $5/month  
 **Build Command:** `pip install -r requirements.txt`  
 **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
 
@@ -253,12 +256,14 @@ The app includes basic CORS middleware. For production, consider:
 ### **Common Issues**
 
 **Railway Deploy Button 404 Error:**
-If the Railway deploy button gives a 404 error:
-1. Visit [Railway.app](https://railway.app) directly
-2. Sign up/login with GitHub
-3. Click "New Project" → "Deploy from GitHub repo"
-4. Search for and select your forked repository
-5. Railway will auto-detect the Python app and deploy
+⚠️ **Railway Update**: Railway no longer offers free app deployments. If you see "Limited Access" or "Requires paid plan" error:
+1. **Free Alternative**: Use **Render** instead (recommended)
+2. **Paid Option**: Upgrade Railway plan ($5/month) to deploy apps
+3. **Manual Workaround**: Visit [Railway.app](https://railway.app) directly
+   - Sign up/login with GitHub
+   - Add payment method (required for apps)
+   - Click "New Project" → "Deploy from GitHub repo"
+   - Search for and select your forked repository
 
 **WebSocket Connection Failed:**
 - Check HTTPS/WSS protocol matching
