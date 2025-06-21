@@ -2,21 +2,49 @@
 
 This project is ready for web deployment! Choose from multiple hosting options below.
 
+> ⚠️ **Important Update**: Heroku discontinued their free tier in November 2022. We recommend **Railway** or **Render** for free hosting.
+
 ## 📋 Quick Deploy Options
 
 ### 🎯 **One-Click Deploy** (Recommended for beginners)
 
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/SepehrMohammady/SimpleMessenger)
+**🆓 FREE Options:**
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/deploy)
+*Railway: $5 free credit monthly*
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+*Render: 750 hours free per month*
+
+**💰 Paid Option:**
+
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/SepehrMohammady/SimpleMessenger)
+*Heroku: Starting at $5/month (no free tier)*
 
 ---
 
+## 🆓 **Recommended FREE Alternatives to Heroku**
+
+### **Railway** (Best overall free option)
+- **Free Tier**: $5 monthly credit (sufficient for most small apps)
+- **Features**: Auto-deployments, custom domains, databases
+- **Deploy**: One-click from GitHub
+
+### **Render** (Most reliable free tier)
+- **Free Tier**: 750 hours/month, auto-sleep after 15min inactivity
+- **Features**: Free SSL, auto-deployments, custom domains
+- **Deploy**: Connect GitHub repo directly
+
+### **Vercel** (Best for frontend-focused apps)
+- **Free Tier**: Generous limits for hobby projects
+- **Features**: Edge network, instant deployments
+- **Deploy**: `npx vercel` or GitHub integration
+
 ## 🛠️ **Manual Deployment Instructions**
 
-### 1. **Heroku** (Free tier available)
+### 1. **Heroku** (Paid plans starting from $5/month)
+
+> ⚠️ **Note**: Heroku discontinued their free tier. The cheapest option is now "Eco" dyno at $5/month.
 
 ```bash
 # Install Heroku CLI and login
@@ -28,11 +56,15 @@ heroku create your-messenger-app-name
 # Deploy
 git push heroku main
 
+# Scale to Eco dyno (minimum paid plan)
+heroku ps:scale web=1 --type=eco
+
 # Open your app
 heroku open
 ```
 
-**Environment Variables:** None required! The app works out of the box.
+**Cost**: $5/month for Eco dyno  
+**Environment Variables**: None required! The app works out of the box.
 
 ---
 
