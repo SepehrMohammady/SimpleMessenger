@@ -4,6 +4,22 @@ This project is ready for web deployment! Choose from multiple hosting options b
 
 > ⚠️ **Important Update**: Heroku discontinued their free tier in November 2022. We recommend **Railway** or **Render** for free hosting.
 
+## 🎯 **TL;DR - Best Options by Use Case**
+
+**🆓 Want FREE hosting with full functionality?**
+→ Use **Render** (750 hours/month, WebSockets supported)
+
+**🏃‍♂️ Want the fastest deployment?**  
+→ Use **Vercel** (limited to polling mode, no real-time WebSockets)
+
+**💰 Don't mind paying for premium features?**
+→ Use **Railway** or **Heroku** ($5/month each, full functionality)
+
+**🐳 Want to use Docker?**
+→ Any VPS with Docker support or platforms like Fly.io
+
+---
+
 ## 📋 Quick Deploy Options
 
 ### 🎯 **One-Click Deploy** (Recommended for beginners)
@@ -58,6 +74,25 @@ This project includes platform-specific configuration files for easy deployment:
 - **⚠️ Limitation**: WebSockets not supported (uses polling mode instead)
 - **Features**: Edge network, instant deployments
 - **Deploy**: `npx vercel` or GitHub integration
+
+### **Fly.io** (Another good free option)
+- **Free Tier**: Generous free allowance for small apps
+- **Features**: Full WebSocket support, auto-deployments
+- **Deploy**: CLI-based deployment
+- **WebSocket Support**: ✅ Full real-time chat functionality
+
+```bash
+# Install Fly CLI and deploy
+curl -L https://fly.io/install.sh | sh
+fly launch
+fly deploy
+```
+
+### **PythonAnywhere** (Python-focused hosting)
+- **Free Tier**: Limited but functional for small projects
+- **Features**: Python-specific hosting, web-based console
+- **WebSocket Support**: ⚠️ Limited on free tier
+- **Deploy**: Upload files via web interface or git
 
 ## 🛠️ **Manual Deployment Instructions**
 
@@ -138,12 +173,45 @@ vercel --prod
 
 ---
 
-### 5. **DigitalOcean App Platform**
+### 5. **Fly.io** (Another good free option)
 
-1. Connect your GitHub repo
-2. Select Python app
-3. Use auto-detected settings
-4. Deploy!
+1. Install Fly CLI:
+```bash
+curl -L https://fly.io/install.sh | sh
+```
+
+2. Deploy using Fly CLI:
+```bash
+fly launch
+fly deploy
+```
+
+**WebSocket Support**: Full real-time chat functionality
+
+---
+
+### 6. **PythonAnywhere** (Python-focused hosting)
+
+1. Sign up at [PythonAnywhere](https://www.pythonanywhere.com/)
+2. Create a new "Web app"
+3. Choose "Manual configuration"
+4. Select "Flask" and Python version
+5. Upload your files via Files tab or git
+6. Configure WSGI file to point to your FastAPI app
+
+**Free Tier Limitations**: Limited CPU seconds, no custom domains on free tier
+
+---
+
+### 7. **Koyeb** (European alternative)
+
+1. Visit [Koyeb.com](https://www.koyeb.com/)
+2. Connect GitHub repository
+3. Auto-detection will configure Python settings
+4. Deploy with one click
+
+**Features**: Global edge deployment, auto-scaling
+**WebSocket Support**: ✅ Full functionality
 
 ---
 
