@@ -40,6 +40,7 @@ This project includes platform-specific configuration files for easy deployment:
 - **Features**: Free SSL, auto-deployments, custom domains
 - **Deploy**: One-click from GitHub
 - **WebSocket Support**: ✅ Full real-time chat functionality
+- **Video Calls**: ✅ Supported with TURN servers (configured)
 - **Performance**: Excellent uptime and reliability
 
 ### **Fly.io** (Global edge deployment)
@@ -47,6 +48,7 @@ This project includes platform-specific configuration files for easy deployment:
 - **Features**: Global edge network, excellent performance
 - **Deploy**: CLI-based deployment
 - **WebSocket Support**: ✅ Full real-time chat functionality  
+- **Video Calls**: ✅ Supported with TURN servers (configured)
 - **Performance**: Fast worldwide deployment
 
 ```bash
@@ -205,6 +207,13 @@ The app includes basic CORS middleware. For production, consider:
 
 ### **Common Issues**
 
+**Video Call Issues:**
+- **Can't see each other**: Fixed with TURN servers (now included)
+- **Camera/microphone permissions**: Users must allow browser permissions
+- **Network firewalls**: Some corporate networks block WebRTC traffic
+- **Browser compatibility**: Use Chrome, Firefox, or Safari for best results
+- **HTTPS required**: Video calls only work on HTTPS (both platforms provide SSL)
+
 **Deployment Issues:**
 - Check Python version (3.8+ required)
 - Verify requirements.txt is complete
@@ -284,6 +293,7 @@ celery
 
 ✅ **Bilingual**: English/Farsi with RTL support
 ✅ **Real-time Chat**: Stable WebSocket connections  
+✅ **Video Calls**: WebRTC with TURN servers for cloud deployment
 ✅ **File Sharing**: Upload/download with previews
 ✅ **PWA**: Installable web app
 ✅ **Modern UI**: Responsive design with accessibility

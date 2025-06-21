@@ -1327,13 +1327,32 @@
                 
                 document.getElementById('videoContainer').classList.add('active');
                 console.log('Video container activated:', document.getElementById('videoContainer').classList.contains('active'));
-                
-                // Create RTCPeerConnection
+                  // Create RTCPeerConnection with STUN and TURN servers
                 const configuration = {
                     iceServers: [
+                        // Google's free STUN servers
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
+                        { urls: 'stun:stun1.l.google.com:19302' },
+                        { urls: 'stun:stun2.l.google.com:19302' },
+                        
+                        // Free TURN servers (with credentials)
+                        {
+                            urls: 'turn:openrelay.metered.ca:80',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        },
+                        {
+                            urls: 'turn:openrelay.metered.ca:443',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        },
+                        {
+                            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                            username: 'openrelayproject',
+                            credential: 'openrelayproject'
+                        }
+                    ],
+                    iceCandidatePoolSize: 10
                 };
                 
                 // Initialize the peer connection if it doesn't exist
@@ -1356,15 +1375,34 @@
                 const localVideo = document.getElementById('localVideo');
                 localVideo.srcObject = localStream;
                 console.log('Local video element:', localVideo);
-                
-                // Handle ICE candidates
+                  // Handle ICE candidates
                 window.pc.onicecandidate = ({ candidate }) => {
                     if (candidate) {
-                        console.log('Sending ICE candidate');
+                        console.log('Sending ICE candidate:', candidate.type, candidate.protocol);
                         safeSendWebSocket({
                             type: 'signal',
                             data: { candidate }
                         });
+                    } else {
+                        console.log('ICE gathering completed');
+                    }
+                };
+
+                // Monitor connection state
+                window.pc.onconnectionstatechange = () => {
+                    console.log('Connection state changed to:', window.pc.connectionState);
+                    if (window.pc.connectionState === 'failed') {
+                        console.error('WebRTC connection failed');
+                        alert('Video call connection failed. Please try again.');
+                    }
+                };
+
+                // Monitor ICE connection state
+                window.pc.oniceconnectionstatechange = () => {
+                    console.log('ICE connection state changed to:', window.pc.iceConnectionState);
+                    if (window.pc.iceConnectionState === 'failed') {
+                        console.error('ICE connection failed');
+                        alert('Could not establish video connection. Check your network.');
                     }
                 };
                 
@@ -1406,10 +1444,34 @@
             try {
                 if (!remoteUsername) {
                     remoteUsername = sender;
-                }
-                // Initialize peer connection if missing
+                }                // Initialize peer connection if missing
                 if (!window.pc) {
-                    const configuration = { iceServers: [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] };
+                    const configuration = {
+                        iceServers: [
+                            // Google's free STUN servers
+                            { urls: 'stun:stun.l.google.com:19302' },
+                            { urls: 'stun:stun1.l.google.com:19302' },
+                            { urls: 'stun:stun2.l.google.com:19302' },
+                            
+                            // Free TURN servers (with credentials)
+                            {
+                                urls: 'turn:openrelay.metered.ca:80',
+                                username: 'openrelayproject',
+                                credential: 'openrelayproject'
+                            },
+                            {
+                                urls: 'turn:openrelay.metered.ca:443',
+                                username: 'openrelayproject',
+                                credential: 'openrelayproject'
+                            },
+                            {
+                                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+                                username: 'openrelayproject',
+                                credential: 'openrelayproject'
+                            }
+                        ],
+                        iceCandidatePoolSize: 10
+                    };
                     window.pc = new RTCPeerConnection(configuration);
                     window.pc.onicecandidate = ({ candidate }) => {
                         if (candidate) safeSendWebSocket({ type: 'signal', data: { candidate } });
