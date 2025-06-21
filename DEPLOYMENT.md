@@ -48,6 +48,7 @@ This project includes platform-specific configuration files for easy deployment:
 
 ### **Vercel** (Best for frontend-focused apps)
 - **Free Tier**: Generous limits for hobby projects
+- **⚠️ Limitation**: WebSockets not supported (uses polling mode instead)
 - **Features**: Edge network, instant deployments
 - **Deploy**: `npx vercel` or GitHub integration
 
@@ -106,6 +107,8 @@ heroku open
 
 ### 4. **Vercel** (Serverless)
 
+**⚠️ Important:** Vercel doesn't support WebSockets due to its serverless architecture. The app will run in "polling mode" with limited real-time capabilities.
+
 ```bash
 # Install Vercel CLI
 npm i -g vercel
@@ -113,6 +116,8 @@ npm i -g vercel
 # Deploy
 vercel --prod
 ```
+
+**Note:** For full WebSocket functionality, use Railway or Render instead.
 
 ---
 
