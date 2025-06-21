@@ -6,11 +6,11 @@ This project is ready for web deployment! Choose from multiple hosting options b
 
 ### 🎯 **One-Click Deploy** (Recommended for beginners)
 
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/SepehrMohammady/SimpleMessenger)
+
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/deploy)
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
-
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
 ---
 
