@@ -208,11 +208,13 @@ The app includes basic CORS middleware. For production, consider:
 ### **Common Issues**
 
 **Video Call Issues:**
-- **Can't see each other**: Fixed with TURN servers (now included)
+- **Can't see each other**: Enhanced with multiple TURN servers and retry logic
+- **Connection testing**: App now tests TURN server connectivity before calls
 - **Camera/microphone permissions**: Users must allow browser permissions
 - **Network firewalls**: Some corporate networks block WebRTC traffic
 - **Browser compatibility**: Use Chrome, Firefox, or Safari for best results
 - **HTTPS required**: Video calls only work on HTTPS (both platforms provide SSL)
+- **Debug info**: Check browser console for detailed connection logs
 
 **Deployment Issues:**
 - Check Python version (3.8+ required)

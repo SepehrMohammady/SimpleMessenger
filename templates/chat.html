@@ -1308,7 +1308,46 @@
             reader.readAsDataURL(file);
         }
         
-        // WebRTC functions
+        // Test TURN server connectivity
+        async function testTurnServers() {
+            console.log('Testing TURN server connectivity...');
+            const testConfig = {
+                iceServers: [
+                    {
+                        urls: ['turn:openrelay.metered.ca:80'],
+                        username: 'openrelayproject',
+                        credential: 'openrelayproject'
+                    }
+                ]
+            };
+            
+            try {
+                const testPc = new RTCPeerConnection(testConfig);
+                const testChannel = testPc.createDataChannel('test');
+                
+                return new Promise((resolve) => {
+                    const timeout = setTimeout(() => {
+                        testPc.close();
+                        console.log('TURN server test timeout - may not be accessible');
+                        resolve(false);
+                    }, 3000);
+                    
+                    testPc.onicecandidate = ({ candidate }) => {
+                        if (candidate && candidate.type === 'relay') {
+                            console.log('TURN server is accessible!');
+                            clearTimeout(timeout);
+                            testPc.close();
+                            resolve(true);
+                        }
+                    };
+                    
+                    testPc.createOffer().then(offer => testPc.setLocalDescription(offer));
+                });
+            } catch (error) {
+                console.error('Error testing TURN servers:', error);
+                return false;
+            }
+        }        // WebRTC functions
         async function startCall() {
             try {
                 // Clear any previous call state
@@ -1319,40 +1358,59 @@
                 
                 // Reset remote username
                 remoteUsername = null;
-                  // Check media permissions
+                
+                // Test TURN server connectivity
+                console.log('Testing TURN server connectivity before starting call...');
+                const turnWorking = await testTurnServers();
+                if (!turnWorking) {
+                    console.warn('TURN servers may not be accessible - video call might fail on restrictive networks');
+                }
+                
+                // Check media permissions
                 const permissionsGranted = await checkMediaPermissions();
                 if (!permissionsGranted) {
                     return;
                 }
                 
                 document.getElementById('videoContainer').classList.add('active');
-                console.log('Video container activated:', document.getElementById('videoContainer').classList.contains('active'));
-                  // Create RTCPeerConnection with STUN and TURN servers
+                console.log('Video container activated:', document.getElementById('videoContainer').classList.contains('active'));// Create RTCPeerConnection with multiple STUN and TURN servers
                 const configuration = {
                     iceServers: [
                         // Google's free STUN servers
                         { urls: 'stun:stun.l.google.com:19302' },
                         { urls: 'stun:stun1.l.google.com:19302' },
                         { urls: 'stun:stun2.l.google.com:19302' },
+                        { urls: 'stun:stun3.l.google.com:19302' },
+                        { urls: 'stun:stun4.l.google.com:19302' },
                         
-                        // Free TURN servers (with credentials)
+                        // Multiple free TURN servers for better reliability
                         {
-                            urls: 'turn:openrelay.metered.ca:80',
+                            urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:80?transport=tcp'],
                             username: 'openrelayproject',
                             credential: 'openrelayproject'
                         },
                         {
-                            urls: 'turn:openrelay.metered.ca:443',
+                            urls: ['turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'],
                             username: 'openrelayproject',
                             credential: 'openrelayproject'
                         },
+                        // Alternative free TURN server
                         {
-                            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                            username: 'openrelayproject',
-                            credential: 'openrelayproject'
+                            urls: ['turn:relay1.expressturn.com:3478'],
+                            username: 'efJBIBF6LOB6FC6LRK',
+                            credential: 'Eyz6xUKZp0RsPQtY'
+                        },
+                        // Another backup TURN server
+                        {
+                            urls: ['turn:turn.anyfirewall.com:443?transport=tcp'],
+                            username: 'webrtc',
+                            credential: 'webrtc'
                         }
                     ],
-                    iceCandidatePoolSize: 10
+                    iceCandidatePoolSize: 10,
+                    iceTransportPolicy: 'all', // Allow both STUN and TURN
+                    bundlePolicy: 'max-bundle',
+                    rtcpMuxPolicy: 'require'
                 };
                 
                 // Initialize the peer connection if it doesn't exist
@@ -1386,23 +1444,43 @@
                     } else {
                         console.log('ICE gathering completed');
                     }
-                };
-
-                // Monitor connection state
+                };                // Monitor connection state with retry logic
                 window.pc.onconnectionstatechange = () => {
                     console.log('Connection state changed to:', window.pc.connectionState);
                     if (window.pc.connectionState === 'failed') {
-                        console.error('WebRTC connection failed');
-                        alert('Video call connection failed. Please try again.');
+                        console.error('WebRTC connection failed, attempting to restart ICE');
+                        // Try to restart ICE gathering
+                        window.pc.restartIce();
+                        
+                        setTimeout(() => {
+                            if (window.pc.connectionState === 'failed') {
+                                alert('Video call connection failed. This may be due to network restrictions. Please try again or check your firewall settings.');
+                                endCall();
+                            }
+                        }, 5000);
+                    } else if (window.pc.connectionState === 'connected') {
+                        console.log('WebRTC connection established successfully!');
                     }
                 };
 
-                // Monitor ICE connection state
+                // Monitor ICE connection state with detailed logging
                 window.pc.oniceconnectionstatechange = () => {
                     console.log('ICE connection state changed to:', window.pc.iceConnectionState);
                     if (window.pc.iceConnectionState === 'failed') {
-                        console.error('ICE connection failed');
-                        alert('Could not establish video connection. Check your network.');
+                        console.error('ICE connection failed - this usually means TURN servers are not accessible');
+                        // Don't immediately fail, let the connection state handler deal with it
+                    } else if (window.pc.iceConnectionState === 'connected') {
+                        console.log('ICE connection established!');
+                    } else if (window.pc.iceConnectionState === 'checking') {
+                        console.log('ICE connectivity checks in progress...');
+                    }
+                };
+
+                // Monitor ICE gathering state
+                window.pc.onicegatheringstatechange = () => {
+                    console.log('ICE gathering state changed to:', window.pc.iceGatheringState);
+                    if (window.pc.iceGatheringState === 'complete') {
+                        console.log('ICE gathering completed');
                     }
                 };
                 
@@ -1452,25 +1530,37 @@
                             { urls: 'stun:stun.l.google.com:19302' },
                             { urls: 'stun:stun1.l.google.com:19302' },
                             { urls: 'stun:stun2.l.google.com:19302' },
+                            { urls: 'stun:stun3.l.google.com:19302' },
+                            { urls: 'stun:stun4.l.google.com:19302' },
                             
-                            // Free TURN servers (with credentials)
+                            // Multiple free TURN servers for better reliability
                             {
-                                urls: 'turn:openrelay.metered.ca:80',
+                                urls: ['turn:openrelay.metered.ca:80', 'turn:openrelay.metered.ca:80?transport=tcp'],
                                 username: 'openrelayproject',
                                 credential: 'openrelayproject'
                             },
                             {
-                                urls: 'turn:openrelay.metered.ca:443',
+                                urls: ['turn:openrelay.metered.ca:443', 'turn:openrelay.metered.ca:443?transport=tcp'],
                                 username: 'openrelayproject',
                                 credential: 'openrelayproject'
                             },
+                            // Alternative free TURN server
                             {
-                                urls: 'turn:openrelay.metered.ca:443?transport=tcp',
-                                username: 'openrelayproject',
-                                credential: 'openrelayproject'
+                                urls: ['turn:relay1.expressturn.com:3478'],
+                                username: 'efJBIBF6LOB6FC6LRK',
+                                credential: 'Eyz6xUKZp0RsPQtY'
+                            },
+                            // Another backup TURN server
+                            {
+                                urls: ['turn:turn.anyfirewall.com:443?transport=tcp'],
+                                username: 'webrtc',
+                                credential: 'webrtc'
                             }
                         ],
-                        iceCandidatePoolSize: 10
+                        iceCandidatePoolSize: 10,
+                        iceTransportPolicy: 'all',
+                        bundlePolicy: 'max-bundle',
+                        rtcpMuxPolicy: 'require'
                     };
                     window.pc = new RTCPeerConnection(configuration);
                     window.pc.onicecandidate = ({ candidate }) => {
