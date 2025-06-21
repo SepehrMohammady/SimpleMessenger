@@ -42,27 +42,19 @@ A modern, secure web-based messenger application with real-time chat, video call
 
 ## 🚀 **Quick Deploy**
 
-> 🔄 **Update 2025**: Railway now requires paid plans. **Render** is the best free alternative with full functionality!
+> 🎯 **Tested & Working**: Only platforms that work reliably with full functionality
 
-### **🆓 FREE Options (Recommended):**
+### **🆓 FREE Options:**
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/SepehrMohammady/SimpleMessenger)
 *⭐ **BEST FREE OPTION** - Full functionality with WebSockets*
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/SepehrMohammady/SimpleMessenger)
-*⚠️ Limited functionality - polling mode only (no real-time WebSockets)*
-
-### **💰 Paid Options:**
-
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/clone?template=https://github.com/SepehrMohammady/SimpleMessenger)
-*Full functionality - $5/month minimum*
-
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/SepehrMohammady/SimpleMessenger)
-*Full functionality - $5/month minimum*
+**Fly.io**: CLI deployment (see [DEPLOYMENT.md](DEPLOYMENT.md) for instructions)
+*Global edge deployment with excellent performance*
 
 ### **Other Deployment Options:**
 - **Docker**: `docker run -p 8000:8000 ghcr.io/sepehrmohammady/simplemessenger`
-- **VPS**: Complete Nginx configuration included
+- **VPS**: Complete configuration included
 - **Local**: Works out of the box with Python 3.8+
 
 ### **📊 Platform Comparison:**
@@ -70,9 +62,7 @@ A modern, secure web-based messenger application with real-time chat, video call
 | Platform | Cost | WebSockets | Real-time Chat | Recommended |
 |----------|------|-----------|----------------|-------------|
 | **Render** | Free (750hrs/month) | ✅ Full | ✅ Yes | ⭐ **BEST FREE** |
-| **Vercel** | Free | ❌ Polling only | ⚠️ Limited | 🔶 **Basic** |
-| **Railway** | $5/month minimum | ✅ Full | ✅ Yes | 💰 **Paid** |
-| **Heroku** | $5/month minimum | ✅ Full | ✅ Yes | 💰 **Paid** |
+| **Fly.io** | Generous free tier | ✅ Full | ✅ Yes | ⭐ **EXCELLENT** |
 
 > 📖 **Full deployment guide:** See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
 
