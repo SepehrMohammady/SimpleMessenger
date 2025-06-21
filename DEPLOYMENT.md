@@ -10,16 +10,27 @@ This project is ready for web deployment! Choose from multiple hosting options b
 
 **🆓 FREE Options:**
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/deploy)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/https://github.com/SepehrMohammady/SimpleMessenger)
 *Railway: $5 free credit monthly*
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/SepehrMohammady/SimpleMessenger)
 *Render: 750 hours free per month*
 
 **💰 Paid Option:**
 
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/SepehrMohammady/SimpleMessenger)
 *Heroku: Starting at $5/month (no free tier)*
+
+### 📁 **Configuration Files Included**
+
+This project includes platform-specific configuration files for easy deployment:
+
+- **`railway.json`** & **`railway.toml`**: Railway deployment configuration
+- **`render.yaml`**: Render service configuration  
+- **`app.json`**: Heroku app configuration
+- **`Procfile`**: Process file for Heroku and similar platforms
+- **`Dockerfile`** & **`docker-compose.yml`**: Container deployment
+- **`.env.example`**: Environment variables template
 
 ---
 
