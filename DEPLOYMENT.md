@@ -40,7 +40,6 @@ This project includes platform-specific configuration files for easy deployment:
 - **Features**: Free SSL, auto-deployments, custom domains
 - **Deploy**: One-click from GitHub
 - **WebSocket Support**: ✅ Full real-time chat functionality
-- **Video Calls**: ✅ Supported with TURN servers (configured)
 - **Performance**: Excellent uptime and reliability
 
 ### **Fly.io** (Global edge deployment)
@@ -48,7 +47,6 @@ This project includes platform-specific configuration files for easy deployment:
 - **Features**: Global edge network, excellent performance
 - **Deploy**: CLI-based deployment
 - **WebSocket Support**: ✅ Full real-time chat functionality  
-- **Video Calls**: ✅ Supported with TURN servers (configured)
 - **Performance**: Fast worldwide deployment
 
 ```bash
@@ -205,136 +203,22 @@ The app includes basic CORS middleware. For production, consider:
 
 ## 🆘 **Troubleshooting**
 
-### **Video Call Issues** 🎥
+### **Common Issues**
 
-**The app includes comprehensive WebRTC diagnostics - click the "🔧 Diagnostics" button in the chat interface to run connectivity tests.**
-
-#### **Common Video Call Problems:**
-
-**1. "Video call connection failed" Error:**
-- **Cause**: TURN servers are blocked or unreachable
-- **Solution**: 
-  - Try different network (mobile hotspot, VPN)
-  - Check corporate firewall settings
-  - Run diagnostics tool to identify specific issues
-  - Use browsers like Chrome or Firefox (better WebRTC support)
-
-**2. "Can't hear/see each other":**
-- **Camera/Microphone Permissions**: Click the camera icon in browser address bar
-- **Browser Compatibility**: Use Chrome, Firefox, or Safari
-- **HTTPS Required**: Video calls only work on HTTPS (both Render and Fly.io provide SSL)
-- **Firewall/NAT Issues**: The app now uses multiple TURN servers for better connectivity
-
-**3. "Connection keeps dropping":**
-- **Network Instability**: Check internet connection quality
-- **TURN Server Issues**: App automatically retries with different servers
-- **Corporate Networks**: May block WebRTC ports (80, 443, 3478)
-
-#### **WebRTC Connection Monitoring** 📊
-
-The app provides detailed logging in the browser console to help diagnose issues:
-
-**Connection States to Look For:**
-- `ICE gathering state: gathering` - Discovering connection paths
-- `ICE connection state: checking` - Testing connectivity options
-- `ICE connection state: connected` - Successful connection established
-- `Connection state: connected` - Video call is working
-
-**Warning Signs:**
-- `TURN server test timeout` - TURN servers may be blocked
-- `ICE connection state: failed` - Connection cannot be established
-- `Connection state: failed` - Call has failed, will attempt restart
-
-**Console Commands for Advanced Users:**
-```javascript
-// Check WebRTC statistics
-window.pc.getStats().then(stats => console.log(stats));
-
-// View current ICE candidates
-console.log('Local candidates:', window.pc.localDescription);
-console.log('Remote candidates:', window.pc.remoteDescription);
-
-// Test specific TURN server
-runWebRTCDiagnostics(); // Built-in diagnostics function
-```
-
-**Network Quality Indicators:**
-- **Excellent**: Multiple TURN servers accessible, low latency
-- **Good**: Some TURN servers working, stable connection
-- **Poor**: Limited connectivity, may experience drops
-- **Failed**: No TURN servers accessible, calls likely to fail
-
-#### **WebRTC Technical Requirements:**
-
-**Browser Support:**
-- ✅ Chrome 23+ (recommended)
-- ✅ Firefox 22+ (recommended)
-- ✅ Safari 11+ (iOS Safari 11+)
-- ✅ Edge 79+
-- ❌ Internet Explorer (not supported)
-
-**Network Requirements:**
-- **HTTPS**: Required for camera/microphone access
-- **WebSocket**: For signaling (wss://)
-- **STUN/TURN**: For NAT traversal
-  - Port 80 (HTTP/WebSocket)
-  - Port 443 (HTTPS/WSS/TURN)
-  - Port 3478 (TURN)
-
-**Firewall Ports:**
-- **Outbound**: 80, 443, 3478 (TCP/UDP)
-- **RTP/SRTP**: Dynamic port range (typically 49152-65535)
-
-#### **Advanced Troubleshooting:**
-
-**Run Built-in Diagnostics:**
-1. Open the chat interface
-2. Click "🔧 Diagnostics" button
-3. Review the connectivity report
-4. Share results with network administrator if needed
-
-**Manual Browser Tests:**
-1. Open browser console (F12)
-2. Check for WebRTC errors
-3. Look for TURN server connectivity issues
-4. Verify HTTPS certificate validity
-
-**Corporate Network Solutions:**
-- Contact IT department to whitelist WebRTC ports
-- Use VPN to bypass restrictions
-- Consider dedicated TURN server for organization
-
-**Custom TURN Server Setup:**
-If free TURN servers are consistently blocked, consider:
-- [Coturn](https://github.com/coturn/coturn) (self-hosted)
-- [Twilio STUN/TURN](https://www.twilio.com/stun-turn)
-- [Xirsys](https://xirsys.com/) (commercial)
-
-### **Deployment Issues**
-
-**Render Deployment:**
+**Deployment Issues:**
 - Check Python version (3.8+ required)
 - Verify requirements.txt is complete
-- Check Render dashboard for build logs
-- Ensure environment variables are set
-
-**Fly.io Deployment:**
-- Install Fly CLI: `curl -L https://fly.io/install.sh | sh`
-- Check `fly logs` for runtime errors
-- Verify Dockerfile configuration
-- Ensure app listens on correct port
+- Check platform-specific logs for errors
 
 **WebSocket Connection Failed:**
 - Check HTTPS/WSS protocol matching
-- Verify platform WebSocket support
-- Check CORS configuration
-- Monitor connection logs
+- Verify port configuration
+- Check firewall settings
 
 **File Upload Issues:**
 - Verify file size limits (5MB default)
 - Check MIME type restrictions
 - Ensure proper base64 encoding
-- Monitor network upload speeds
 
 ### **Debug Mode**
 ```bash
@@ -400,7 +284,6 @@ celery
 
 ✅ **Bilingual**: English/Farsi with RTL support
 ✅ **Real-time Chat**: Stable WebSocket connections  
-✅ **Video Calls**: WebRTC with TURN servers for cloud deployment
 ✅ **File Sharing**: Upload/download with previews
 ✅ **PWA**: Installable web app
 ✅ **Modern UI**: Responsive design with accessibility

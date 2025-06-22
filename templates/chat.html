@@ -944,9 +944,7 @@
             statusElement.innerHTML = state === 'connecting' 
                 ? '<div class="loading"></div>' + message
                 : message;
-        }
-        
-        function initializeWebSocket(username) {
+        }        function initializeWebSocket(username) {
             try {
                 if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
                     return; // Already connected or connecting
@@ -1052,9 +1050,7 @@
                 console.error('Failed to send message:', error);
                 return false;
             }
-        }
-        
-        function handleFileMessage(data) {
+        }        function handleFileMessage(data) {
             console.log('Handling file message:', data); // Debug log
             const chat = document.getElementById('chat');
             const isOwn = data.username === new URLSearchParams(window.location.search).get('username');
@@ -1147,9 +1143,7 @@
             
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
-        }
-        
-        function getFileIcon(mimeType) {
+        }        function getFileIcon(mimeType) {
             if (mimeType.startsWith('image/')) {
                 return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="24" height="24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
             } else if (mimeType === 'application/pdf') {
@@ -1313,86 +1307,8 @@
             };
             reader.readAsDataURL(file);
         }
-          // Test TURN server connectivity with multiple servers
-        async function testTurnServers() {
-            console.log('Testing TURN server connectivity...');
-            
-            // Test multiple TURN servers
-            const turnServers = [
-                {
-                    urls: ['turn:openrelay.metered.ca:80'],
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject',
-                    name: 'OpenRelay (Port 80)'
-                },
-                {
-                    urls: ['turn:openrelay.metered.ca:443'],
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject',
-                    name: 'OpenRelay (Port 443)'
-                },
-                {
-                    urls: ['turn:relay1.expressturn.com:3478'],
-                    username: 'efJBIBF6LOB6FC6LRK',
-                    credential: 'Eyz6xUKZp0RsPQtY',
-                    name: 'ExpressTurn'
-                },
-                {
-                    urls: ['turn:turn.anyfirewall.com:443?transport=tcp'],
-                    username: 'webrtc',
-                    credential: 'webrtc',
-                    name: 'AnyFirewall'
-                }
-            ];
-            
-            let workingServers = 0;
-            
-            for (const turnServer of turnServers) {
-                try {
-                    const testConfig = {
-                        iceServers: [
-                            { urls: 'stun:stun.l.google.com:19302' },
-                            turnServer
-                        ]
-                    };
-                    
-                    const testPc = new RTCPeerConnection(testConfig);
-                    const testChannel = testPc.createDataChannel('test');
-                    
-                    const serverWorking = await new Promise((resolve) => {
-                        const timeout = setTimeout(() => {
-                            testPc.close();
-                            console.log(`${turnServer.name} test timeout`);
-                            resolve(false);
-                        }, 5000);
-                        
-                        testPc.onicecandidate = ({ candidate }) => {
-                            if (candidate && candidate.type === 'relay') {
-                                console.log(`${turnServer.name} is accessible!`);
-                                clearTimeout(timeout);
-                                testPc.close();
-                                resolve(true);
-                            }
-                        };
-                        
-                        testPc.createOffer().then(offer => testPc.setLocalDescription(offer)).catch(() => {
-                            clearTimeout(timeout);
-                            testPc.close();
-                            resolve(false);
-                        });
-                    });
-                    
-                    if (serverWorking) {
-                        workingServers++;
-                    }
-                } catch (error) {
-                    console.error(`Error testing ${turnServer.name}:`, error);
-                }
-            }
-            
-            console.log(`${workingServers} out of ${turnServers.length} TURN servers are accessible`);
-            return workingServers > 0;
-        }        // WebRTC functions
+        
+        // WebRTC functions
         async function startCall() {
             try {
                 // Clear any previous call state
@@ -1403,18 +1319,7 @@
                 
                 // Reset remote username
                 remoteUsername = null;
-                
-                // Test TURN server connectivity
-                console.log('Testing TURN server connectivity before starting call...');
-                const turnWorking = await testTurnServers();
-                if (!turnWorking) {
-                    const proceed = confirm('TURN servers may not be accessible. Video calls might not work on restrictive networks. Do you want to proceed anyway?');
-                    if (!proceed) {
-                        return;
-                    }
-                }
-                
-                // Check media permissions
+                  // Check media permissions
                 const permissionsGranted = await checkMediaPermissions();
                 if (!permissionsGranted) {
                     return;
@@ -1422,165 +1327,27 @@
                 
                 document.getElementById('videoContainer').classList.add('active');
                 console.log('Video container activated:', document.getElementById('videoContainer').classList.contains('active'));
-
-                // Create RTCPeerConnection with comprehensive configuration
+                
+                // Create RTCPeerConnection
                 const configuration = {
                     iceServers: [
-                        // Google's free STUN servers
                         { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' },
-                        { urls: 'stun:stun2.l.google.com:19302' },
-                        { urls: 'stun:stun3.l.google.com:19302' },
-                        { urls: 'stun:stun4.l.google.com:19302' },
-                        
-                        // Multiple free TURN servers for better reliability
-                        {
-                            urls: [
-                                'turn:openrelay.metered.ca:80',
-                                'turn:openrelay.metered.ca:80?transport=tcp',
-                                'turns:openrelay.metered.ca:443?transport=tcp'
-                            ],
-                            username: 'openrelayproject',
-                            credential: 'openrelayproject'
-                        },
-                        {
-                            urls: [
-                                'turn:openrelay.metered.ca:443',
-                                'turn:openrelay.metered.ca:443?transport=tcp'
-                            ],
-                            username: 'openrelayproject',
-                            credential: 'openrelayproject'
-                        },
-                        // Alternative free TURN servers
-                        {
-                            urls: [
-                                'turn:relay1.expressturn.com:3478',
-                                'turn:relay1.expressturn.com:3478?transport=tcp'
-                            ],
-                            username: 'efJBIBF6LOB6FC6LRK',
-                            credential: 'Eyz6xUKZp0RsPQtY'
-                        },
-                        {
-                            urls: [
-                                'turn:turn.anyfirewall.com:443?transport=tcp'
-                            ],
-                            username: 'webrtc',
-                            credential: 'webrtc'
-                        },
-                        // Additional public TURN servers
-                        {
-                            urls: [
-                                'turn:numb.viagenie.ca:3478',
-                                'turn:numb.viagenie.ca:3478?transport=tcp'
-                            ],
-                            username: 'webrtc@live.com',
-                            credential: 'muazkh'
-                        }
-                    ],
-                    iceCandidatePoolSize: 10,
-                    iceTransportPolicy: 'all', // Allow both STUN and TURN
-                    bundlePolicy: 'max-bundle',
-                    rtcpMuxPolicy: 'require'
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
                 };
                 
-                // Initialize the peer connection
+                // Initialize the peer connection if it doesn't exist
                 window.pc = new RTCPeerConnection(configuration);
-                
-                // Connection state monitoring with enhanced error handling
-                let connectionTimeout;
-                let iceRestartAttempts = 0;
-                const maxIceRestartAttempts = 2;
-                
-                window.pc.onconnectionstatechange = () => {
-                    console.log('Connection state changed to:', window.pc.connectionState);
-                    
-                    if (window.pc.connectionState === 'connecting') {
-                        // Set a connection timeout
-                        connectionTimeout = setTimeout(() => {
-                            if (window.pc.connectionState === 'connecting') {
-                                console.error('Connection timeout after 30 seconds');
-                                alert('Video call connection is taking too long. Please check your internet connection and try again.');
-                                endCall();
-                            }
-                        }, 30000);
-                    } else if (window.pc.connectionState === 'connected') {
-                        console.log('WebRTC connection established successfully!');
-                        if (connectionTimeout) {
-                            clearTimeout(connectionTimeout);
-                            connectionTimeout = null;
-                        }
-                        iceRestartAttempts = 0; // Reset restart attempts on successful connection
-                    } else if (window.pc.connectionState === 'failed') {
-                        console.error('WebRTC connection failed');
-                        if (connectionTimeout) {
-                            clearTimeout(connectionTimeout);
-                            connectionTimeout = null;
-                        }
-                        
-                        if (iceRestartAttempts < maxIceRestartAttempts) {
-                            console.log(`Attempting ICE restart (${iceRestartAttempts + 1}/${maxIceRestartAttempts})`);
-                            iceRestartAttempts++;
-                            window.pc.restartIce();
-                        } else {
-                            alert('Video call connection failed after multiple attempts. This may be due to network restrictions or firewall settings. Please try again later or check your network configuration.');
-                            endCall();
-                        }
-                    }
-                };
-
-                // Enhanced ICE connection state monitoring
-                window.pc.oniceconnectionstatechange = () => {
-                    console.log('ICE connection state changed to:', window.pc.iceConnectionState);
-                    
-                    switch (window.pc.iceConnectionState) {
-                        case 'checking':
-                            console.log('ICE connectivity checks in progress...');
-                            break;
-                        case 'connected':
-                            console.log('ICE connection established!');
-                            break;
-                        case 'completed':
-                            console.log('ICE connection completed successfully!');
-                            break;
-                        case 'failed':
-                            console.error('ICE connection failed - TURN servers may not be accessible or network is too restrictive');
-                            break;
-                        case 'disconnected':
-                            console.warn('ICE connection disconnected - attempting to reconnect...');
-                            break;
-                        case 'closed':
-                            console.log('ICE connection closed');
-                            break;
-                    }
-                };
-
-                // ICE gathering state monitoring
-                window.pc.onicegatheringstatechange = () => {
-                    console.log('ICE gathering state changed to:', window.pc.iceGatheringState);
-                    if (window.pc.iceGatheringState === 'complete') {
-                        console.log('ICE gathering completed - found', window.pc.sctp ? 'SCTP' : 'no SCTP', 'support');
-                    }
-                };
-                
-                // Get local media stream
+                  // Get local media stream
                 console.log('Requesting user media...');
                 localStream = await navigator.mediaDevices.getUserMedia({
-                    video: { 
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 },
-                        frameRate: { ideal: 30 }
-                    },
-                    audio: {
-                        echoCancellation: true,
-                        noiseSuppression: true,
-                        autoGainControl: true
-                    }
+                    video: true,
+                    audio: true
                 });
                 console.log('Got local stream:', localStream);
-                
-                // Add tracks to peer connection
+                  // Add tracks to peer connection
                 localStream.getTracks().forEach(track => {
-                    console.log('Adding track:', track.kind, track.label);
+                    console.log('Adding track:', track.kind);
                     window.pc.addTrack(track, localStream);
                 });
                 
@@ -1588,267 +1355,126 @@
                 console.log('Setting local video source...');
                 const localVideo = document.getElementById('localVideo');
                 localVideo.srcObject = localStream;
-                localVideo.muted = true; // Prevent audio feedback
                 console.log('Local video element:', localVideo);
                 
-                // Handle ICE candidates with detailed logging
+                // Handle ICE candidates
                 window.pc.onicecandidate = ({ candidate }) => {
                     if (candidate) {
-                        console.log('Sending ICE candidate:', {
-                            type: candidate.type,
-                            protocol: candidate.protocol,
-                            address: candidate.address,
-                            port: candidate.port,
-                            priority: candidate.priority
-                        });
+                        console.log('Sending ICE candidate');
                         safeSendWebSocket({
                             type: 'signal',
                             data: { candidate }
                         });
-                    } else {
-                        console.log('ICE gathering completed - all candidates sent');
                     }
                 };
                 
                 // Handle incoming tracks
                 window.pc.ontrack = (event) => {
-                    console.log('Received remote stream:', event.streams[0]);
+                    console.log('Received remote stream in startCall:', event.streams[0]);
                     const remoteVideo = document.getElementById('remoteVideo');
                     remoteVideo.srcObject = event.streams[0];
-                    console.log('Remote video element configured');
+                    console.log('Remote video element:', remoteVideo);
+                    console.log('Remote video srcObject set to:', remoteVideo.srcObject);
                     
-                    // Ensure video is visible and plays
+                    // Ensure video is visible
                     remoteVideo.style.display = 'block';
-                    remoteVideo.play().catch(e => console.error('Error playing remote video:', e));
+                    
+                    // Force a reflow to ensure the video renders
+                    setTimeout(() => {
+                        remoteVideo.play().catch(e => console.error('Error playing remote video:', e));
+                    }, 500);
                 };
                 
-                // Create and send offer
-                console.log('Creating offer...');
-                const offer = await window.pc.createOffer({
-                    offerToReceiveAudio: true,
-                    offerToReceiveVideo: true
-                });
+                // Create and send offer (only if this is the initiator)
+                console.log('Creating offer');
+                const offer = await window.pc.createOffer();
                 await window.pc.setLocalDescription(offer);
-                console.log('Offer created and local description set');
                 
                 safeSendWebSocket({
                     type: 'signal',
                     data: { offer }
                 });
-                console.log('Offer sent via WebSocket');                  async function handleSignal(data, sender) {
+            } catch (error) {
+                console.error('Error starting call:', error);
+                alert(i18n.chat.call.start_error);
+                endCall();            }
+        }
+        
+        async function handleSignal(data, sender) {
             const myUsername = new URLSearchParams(window.location.search).get('username');
             if (sender === myUsername) return;
-            
             try {
                 if (!remoteUsername) {
                     remoteUsername = sender;
                 }
-                
                 // Initialize peer connection if missing
                 if (!window.pc) {
-                    const configuration = {
-                        iceServers: [
-                            // Google's free STUN servers
-                            { urls: 'stun:stun.l.google.com:19302' },
-                            { urls: 'stun:stun1.l.google.com:19302' },
-                            { urls: 'stun:stun2.l.google.com:19302' },
-                            { urls: 'stun:stun3.l.google.com:19302' },
-                            { urls: 'stun:stun4.l.google.com:19302' },
-                            
-                            // Multiple free TURN servers for better reliability
-                            {
-                                urls: [
-                                    'turn:openrelay.metered.ca:80',
-                                    'turn:openrelay.metered.ca:80?transport=tcp',
-                                    'turns:openrelay.metered.ca:443?transport=tcp'
-                                ],
-                                username: 'openrelayproject',
-                                credential: 'openrelayproject'
-                            },
-                            {
-                                urls: [
-                                    'turn:openrelay.metered.ca:443',
-                                    'turn:openrelay.metered.ca:443?transport=tcp'
-                                ],
-                                username: 'openrelayproject',
-                                credential: 'openrelayproject'
-                            },
-                            // Alternative free TURN servers
-                            {
-                                urls: [
-                                    'turn:relay1.expressturn.com:3478',
-                                    'turn:relay1.expressturn.com:3478?transport=tcp'
-                                ],
-                                username: 'efJBIBF6LOB6FC6LRK',
-                                credential: 'Eyz6xUKZp0RsPQtY'
-                            },
-                            {
-                                urls: [
-                                    'turn:turn.anyfirewall.com:443?transport=tcp'
-                                ],
-                                username: 'webrtc',
-                                credential: 'webrtc'
-                            },
-                            // Additional public TURN servers
-                            {
-                                urls: [
-                                    'turn:numb.viagenie.ca:3478',
-                                    'turn:numb.viagenie.ca:3478?transport=tcp'
-                                ],
-                                username: 'webrtc@live.com',
-                                credential: 'muazkh'
-                            }
-                        ],
-                        iceCandidatePoolSize: 10,
-                        iceTransportPolicy: 'all',
-                        bundlePolicy: 'max-bundle',
-                        rtcpMuxPolicy: 'require'
-                    };
-                    
+                    const configuration = { iceServers: [ { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' } ] };
                     window.pc = new RTCPeerConnection(configuration);
-                    
-                    // Set up event handlers
                     window.pc.onicecandidate = ({ candidate }) => {
-                        if (candidate) {
-                            console.log('Sending ICE candidate from handleSignal:', candidate.type, candidate.protocol);
-                            safeSendWebSocket({ type: 'signal', data: { candidate } });
-                        }
+                        if (candidate) safeSendWebSocket({ type: 'signal', data: { candidate } });
                     };
-                    
                     window.pc.ontrack = (event) => {
-                        console.log('Received remote stream in handleSignal:', event.streams[0]);
-                        const remoteVideo = document.getElementById('remoteVideo');
-                        remoteVideo.srcObject = event.streams[0];
-                        remoteVideo.style.display = 'block';
-                        remoteVideo.play().catch(e => console.error('Error playing remote video:', e));
+                        document.getElementById('remoteVideo').srcObject = event.streams[0];
                         document.getElementById('videoContainer').classList.add('active');
                     };
-                    
-                    // Connection state monitoring
-                    window.pc.onconnectionstatechange = () => {
-                        console.log('Connection state (from handleSignal):', window.pc.connectionState);
-                        if (window.pc.connectionState === 'connected') {
-                            console.log('WebRTC connection established successfully!');
-                        } else if (window.pc.connectionState === 'failed') {
-                            console.error('WebRTC connection failed in handleSignal');
-                            alert('Video call connection failed. Please try again.');
-                            endCall();
-                        }
-                    };
-                    
-                    // Get local media if not already available
                     if (!localStream) {
-                        localStream = await navigator.mediaDevices.getUserMedia({ 
-                            video: { 
-                                width: { ideal: 1280 },
-                                height: { ideal: 720 },
-                                frameRate: { ideal: 30 }
-                            },
-                            audio: {
-                                echoCancellation: true,
-                                noiseSuppression: true,
-                                autoGainControl: true
-                            }
-                        });
-                        localStream.getTracks().forEach(track => {
-                            console.log('Adding track in handleSignal:', track.kind);
-                            window.pc.addTrack(track, localStream);
-                        });
-                        const localVideo = document.getElementById('localVideo');
-                        localVideo.srcObject = localStream;
-                        localVideo.muted = true;
+                        localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                        localStream.getTracks().forEach(track => window.pc.addTrack(track, localStream));
+                        document.getElementById('localVideo').srcObject = localStream;
                     }
                 }
-                
                 // Process signals
                 if (data.offer) {
-                    console.log('Received offer, creating answer');
                     // Received offer, send answer
                     await window.pc.setRemoteDescription(new RTCSessionDescription(data.offer));
                     // Drain buffered ICE candidates
                     for (const cand of candidateBuffer) {
-                        console.log('Adding buffered candidate:', cand.type);
                         await window.pc.addIceCandidate(new RTCIceCandidate(cand));
                     }
                     candidateBuffer = [];
                     const answer = await window.pc.createAnswer();
                     await window.pc.setLocalDescription(answer);
-                    console.log('Sending answer');
                     safeSendWebSocket({ type: 'signal', data: { answer } });
                 } else if (data.answer) {
-                    console.log('Received answer, finalizing connection');
                     // Received answer, finish connection
                     await window.pc.setRemoteDescription(new RTCSessionDescription(data.answer));
                     // Drain buffered ICE candidates
                     for (const cand of candidateBuffer) {
-                        console.log('Adding buffered candidate:', cand.type);
                         await window.pc.addIceCandidate(new RTCIceCandidate(cand));
                     }
                     candidateBuffer = [];
                 } else if (data.candidate) {
-                    console.log('Received ICE candidate:', data.candidate.type, data.candidate.protocol);
                     if (window.pc.remoteDescription && window.pc.remoteDescription.type) {
                         await window.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
                     } else {
                         // Buffer ICE until remote description is set
-                        console.log('Buffering ICE candidate until remote description is set');
                         candidateBuffer.push(data.candidate);
                     }
                 }
             } catch (error) {
                 console.error('Error handling signal:', error);
-                alert('Error processing video call signal: ' + error.message);
-            }        }
-        
-        function endCall() {
-            console.log('Ending call and cleaning up resources');
-            
-            // Clear any connection timeouts
-            if (window.connectionTimeout) {
-                clearTimeout(window.connectionTimeout);
-                window.connectionTimeout = null;
             }
-            
-            // Stop all local media tracks
+        }        function endCall() {
             if (localStream) {
-                console.log('Stopping local media tracks');
-                localStream.getTracks().forEach(track => {
-                    console.log('Stopping track:', track.kind, track.label);
-                    track.stop();
-                });
+                localStream.getTracks().forEach(track => track.stop());
                 localStream = null;
             }
             
-            // Close peer connection
             if (window.pc) {
-                console.log('Closing peer connection');
                 window.pc.close();
                 window.pc = null;
             }
             
-            // Clear buffered candidates
-            candidateBuffer = [];
-            
-            // Reset remote username
-            remoteUsername = null;
-            
-            // Hide video container and clear video sources
             document.getElementById('videoContainer').classList.remove('active');
-            const localVideo = document.getElementById('localVideo');
-            const remoteVideo = document.getElementById('remoteVideo');
-            
-            localVideo.srcObject = null;
-            remoteVideo.srcObject = null;
-            localVideo.style.display = 'block';
-            remoteVideo.style.display = 'none';
+            document.getElementById('localVideo').srcObject = null;
+            document.getElementById('remoteVideo').srcObject = null;
             
             // Reset mute states
             isAudioMuted = false;
             isVideoMuted = false;
             updateCallControls();
-            
-            console.log('Call cleanup completed');
-        }function toggleMute() {
+        }        function toggleMute() {
             if (!localStream) return;
             isAudioMuted = !isAudioMuted;
             localStream.getAudioTracks().forEach(track => {
@@ -1945,215 +1571,6 @@
                 return true;
             }
         }
-
-        // WebRTC Connection Diagnostics
-        async function runWebRTCDiagnostics() {
-            console.log('=== WebRTC Connection Diagnostics ===');
-            const results = {
-                browser: getBrowserInfo(),
-                mediaDevices: await testMediaDevices(),
-                stunServers: await testStunServers(),
-                turnServers: await testTurnServersDetailed(),
-                networkType: await getNetworkType()
-            };
-            
-            console.log('Diagnostics Results:', results);
-            
-            // Display results to user
-            let report = '=== WebRTC Diagnostics Report ===\n\n';
-            report += `Browser: ${results.browser}\n`;
-            report += `Media Devices: ${results.mediaDevices ? 'OK' : 'FAILED'}\n`;
-            report += `STUN Servers: ${results.stunServers.working}/${results.stunServers.total} working\n`;
-            report += `TURN Servers: ${results.turnServers.working}/${results.turnServers.total} accessible\n`;
-            report += `Network Type: ${results.networkType}\n\n`;
-            
-            if (!results.mediaDevices) {
-                report += '⚠️ Camera/microphone access denied. Please allow permissions.\n';
-            }
-            
-            if (results.turnServers.working === 0) {
-                report += '⚠️ No TURN servers accessible. Video calls may fail on restrictive networks.\n';
-                report += 'Consider using a VPN or contacting your network administrator.\n';
-            } else if (results.turnServers.working < 2) {
-                report += '⚠️ Limited TURN server connectivity. Connection may be unstable.\n';
-            }
-            
-            if (results.stunServers.working === 0) {
-                report += '⚠️ STUN servers not accessible. This may indicate severe network restrictions.\n';
-            }
-            
-            alert(report);
-            return results;
-        }
-        
-        function getBrowserInfo() {
-            const ua = navigator.userAgent;
-            if (ua.includes('Chrome')) return 'Chrome';
-            if (ua.includes('Firefox')) return 'Firefox';
-            if (ua.includes('Safari')) return 'Safari';
-            if (ua.includes('Edge')) return 'Edge';
-            return 'Unknown';
-        }
-        
-        async function testMediaDevices() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                stream.getTracks().forEach(track => track.stop());
-                return true;
-            } catch (error) {
-                console.error('Media devices test failed:', error);
-                return false;
-            }
-        }
-        
-        async function testStunServers() {
-            const stunServers = [
-                'stun:stun.l.google.com:19302',
-                'stun:stun1.l.google.com:19302',
-                'stun:stun2.l.google.com:19302',
-                'stun:stun3.l.google.com:19302',
-                'stun:stun4.l.google.com:19302'
-            ];
-            
-            let working = 0;
-            
-            for (const stunUrl of stunServers) {
-                try {
-                    const pc = new RTCPeerConnection({ iceServers: [{ urls: stunUrl }] });
-                    const channel = pc.createDataChannel('test');
-                    
-                    const stunWorks = await new Promise((resolve) => {
-                        const timeout = setTimeout(() => {
-                            pc.close();
-                            resolve(false);
-                        }, 3000);
-                        
-                        pc.onicecandidate = ({ candidate }) => {
-                            if (candidate && candidate.type === 'srflx') {
-                                clearTimeout(timeout);
-                                pc.close();
-                                resolve(true);
-                            }
-                        };
-                        
-                        pc.createOffer().then(offer => pc.setLocalDescription(offer)).catch(() => {
-                            clearTimeout(timeout);
-                            pc.close();
-                            resolve(false);
-                        });
-                    });
-                    
-                    if (stunWorks) working++;
-                } catch (error) {
-                    console.error(`STUN test failed for ${stunUrl}:`, error);
-                }
-            }
-            
-            return { working, total: stunServers.length };
-        }
-        
-        async function testTurnServersDetailed() {
-            const turnServers = [
-                {
-                    urls: ['turn:openrelay.metered.ca:80'],
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject',
-                    name: 'OpenRelay Port 80'
-                },
-                {
-                    urls: ['turn:openrelay.metered.ca:443'],
-                    username: 'openrelayproject',
-                    credential: 'openrelayproject',
-                    name: 'OpenRelay Port 443'
-                },
-                {
-                    urls: ['turn:relay1.expressturn.com:3478'],
-                    username: 'efJBIBF6LOB6FC6LRK',
-                    credential: 'Eyz6xUKZp0RsPQtY',
-                    name: 'ExpressTurn'
-                },
-                {
-                    urls: ['turn:turn.anyfirewall.com:443?transport=tcp'],
-                    username: 'webrtc',
-                    credential: 'webrtc',
-                    name: 'AnyFirewall'
-                },
-                {
-                    urls: ['turn:numb.viagenie.ca:3478'],
-                    username: 'webrtc@live.com',
-                    credential: 'muazkh',
-                    name: 'Numb Viagenie'
-                }
-            ];
-            
-            let working = 0;
-            const results = [];
-            
-            for (const turnServer of turnServers) {
-                try {
-                    const pc = new RTCPeerConnection({ 
-                        iceServers: [
-                            { urls: 'stun:stun.l.google.com:19302' },
-                            turnServer
-                        ] 
-                    });
-                    const channel = pc.createDataChannel('test');
-                    
-                    const serverWorking = await new Promise((resolve) => {
-                        const timeout = setTimeout(() => {
-                            pc.close();
-                            resolve(false);
-                        }, 5000);
-                        
-                        pc.onicecandidate = ({ candidate }) => {
-                            if (candidate && candidate.type === 'relay') {
-                                clearTimeout(timeout);
-                                pc.close();
-                                resolve(true);
-                            }
-                        };
-                        
-                        pc.createOffer().then(offer => pc.setLocalDescription(offer)).catch(() => {
-                            clearTimeout(timeout);
-                            pc.close();
-                            resolve(false);
-                        });
-                    });
-                    
-                    results.push({ name: turnServer.name, working: serverWorking });
-                    if (serverWorking) working++;
-                    
-                } catch (error) {
-                    console.error(`TURN test failed for ${turnServer.name}:`, error);
-                    results.push({ name: turnServer.name, working: false, error: error.message });
-                }
-            }
-            
-            console.log('TURN server test results:', results);
-            return { working, total: turnServers.length, details: results };
-        }
-        
-        async function getNetworkType() {
-            if ('connection' in navigator) {
-                return navigator.connection.effectiveType || 'unknown';
-            }
-            return 'unknown';
-        }
-          // Add diagnostics button to the UI
-        window.addEventListener('load', () => {
-            const callControls = document.querySelector('.call-controls');
-            if (callControls) {
-                const diagnosticsBtn = document.createElement('button');
-                diagnosticsBtn.textContent = '🔧 Diagnostics';
-                diagnosticsBtn.className = 'btn btn-secondary';
-                diagnosticsBtn.onclick = runWebRTCDiagnostics;
-                diagnosticsBtn.style.marginLeft = '10px';
-                callControls.appendChild(diagnosticsBtn);
-            }
-        });
-        
-        // Debug: Script loaded successfully
-        console.log('✅ All JavaScript loaded successfully');
     </script>
 </body>
 </html>

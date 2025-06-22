@@ -11,11 +11,10 @@ A modern, secure web-based messenger application with real-time chat, video call
 - Message history (in-memory)
 
 ### 🎥 **Video & Audio Calls**
-- Video/Audio calls using WebRTC with TURN servers
+- Video/Audio calls using WebRTC
 - Camera and microphone controls
 - Mute/unmute functionality
 - Full-screen call interface
-- ✅ **Fixed**: Now works on deployed platforms (Render, Fly.io)
 
 ### 📁 **Enhanced File Sharing**
 - **Image Previews**: Inline thumbnails with click-to-expand modal
