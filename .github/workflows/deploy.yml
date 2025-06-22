@@ -1,4 +1,4 @@
-name: Deploy to Multiple Platforms
+name: Test Application (Stable Version)
 
 on:
   push:
@@ -24,67 +24,20 @@ jobs:
         
     - name: Test application startup
       run: |
-        timeout 10s uvicorn main:app --host 0.0.0.0 --port 8000 || true
-        echo "Application startup test completed"
-
-  docker:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Build Docker image
-      run: |
-        docker build -t simplemessenger .
-        
-    - name: Test Docker container
-      run: |
-        docker run -d -p 8000:8000 --name test-container simplemessenger
-        sleep 10
+        timeout 10s uvicorn main:app --host 0.0.0.0 --port 8000 &
+        sleep 5
         curl -f http://localhost:8000/ || exit 1
-        docker stop test-container
-        
-    - name: Login to GitHub Container Registry
-      if: github.event_name == 'push'
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-        
-    - name: Push to GitHub Container Registry
-      if: github.event_name == 'push'
-      run: |
-        docker tag simplemessenger ghcr.io/${{ github.repository_owner }}/simplemessenger:latest
-        docker tag simplemessenger ghcr.io/${{ github.repository_owner }}/simplemessenger:${{ github.sha }}
-        docker push ghcr.io/${{ github.repository_owner }}/simplemessenger:latest
-        docker push ghcr.io/${{ github.repository_owner }}/simplemessenger:${{ github.sha }}
+        echo "✅ Application startup test passed"
 
-  deploy-heroku:
-    needs: test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Deploy to Heroku
-      uses: akhileshns/heroku-deploy@v3.12.12
-      with:
-        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
-        heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
-        heroku_email: ${{ secrets.HEROKU_EMAIL }}
-        
-  # Uncomment to enable Railway deployment
-  # deploy-railway:
-  #   needs: test
-  #   runs-on: ubuntu-latest
-  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #   steps:
-  #   - uses: actions/checkout@v4
-  #   - name: Deploy to Railway
-  #     run: |
-  #       npm install -g @railway/cli
-  #       railway deploy
-  #     env:
-  #       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    - name: Test requirements
+      run: |
+        python -c "import fastapi, uvicorn, jinja2; print('✅ All required packages imported successfully')"
+
+    - name: ✅ Deployment Note
+      run: |
+        echo "✅ Application tested successfully!"
+        echo "📝 For deployment, use:"
+        echo "   • Render: One-click deploy button in README"
+        echo "   • Fly.io: CLI deployment (see DEPLOYMENT.md)"
+        echo "   • Docker: Available for VPS deployment"
+        echo "🚫 No automatic deployment to avoid platform conflicts"
