@@ -53,7 +53,7 @@ A modern, secure web-based messenger application with real-time chat, video call
 *Global edge deployment with excellent performance*
 
 ### **Other Deployment Options:**
-- **Docker**: `docker run -p 8000:8000 ghcr.io/sepehrmohammady/simplemessenger`
+- **Docker**: Available for VPS/server deployment
 - **VPS**: Complete configuration included
 - **Local**: Works out of the box with Python 3.8+
 
