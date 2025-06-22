@@ -25,6 +25,14 @@ A modern, secure web-based messenger application with real-time chat, video call
 - **File Type Detection**: Smart icons for different file types
 - **5MB file size limit** with user-friendly error handling
 
+### 🎤 **Voice & Video Messages**
+- **Voice Messages**: Record and send audio messages with one-click recording
+- **Video Messages**: Record and send short video messages with thumbnails
+- **Playback Controls**: Custom audio/video players with progress indicators
+- **Duration Display**: Shows recording and playback duration
+- **Waveform Visualization**: Visual feedback for voice message playback
+- **Auto Thumbnails**: Automatic thumbnail generation for video messages
+
 ### 🌐 **User Experience**
 - 🌓 Dark/Light theme with automatic detection
 - 🌍 **Bilingual Support**: English and Persian (Farsi) with proper RTL layout
@@ -99,6 +107,7 @@ A modern, secure web-based messenger application with real-time chat, video call
 - ✅ **Cleaned up legacy code** and unused dependencies
 - ✅ **Better error handling** for file operations
 - ✅ **Fixed GitHub Actions** - removed failing deployment workflows
+- ✅ **Voice & Video Messages** - Record and send audio/video messages with playback controls
 
 ## 🔮 Future Enhancements
 

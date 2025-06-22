@@ -34,7 +34,9 @@ app.add_middleware(
 # Store messages in memory (for production, consider using Redis or database)
 messages = []
 MAX_MESSAGES = int(os.environ.get("MAX_MESSAGES", "100"))  # Keep last N messages
-MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", str(5 * 1024 * 1024)))  # Default 5MB
+MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", str(5 * 1024 * 1024)))  # Default 5MB for files
+MAX_VOICE_SIZE = int(os.environ.get("MAX_VOICE_SIZE", str(10 * 1024 * 1024)))  # 10MB for voice messages
+MAX_VIDEO_SIZE = int(os.environ.get("MAX_VIDEO_SIZE", str(20 * 1024 * 1024)))  # 20MB for video messages
 
 class ConnectionManager:
     def __init__(self):
@@ -92,13 +94,97 @@ class ConnectionManager:
                 "content": file_data["content"],
                 "filename": file_data["filename"],
                 "mimetype": file_data["type"],
-                "timestamp": datetime.now().isoformat()
-            }
+                "timestamp": datetime.now().isoformat()            }
             await self._broadcast_to_all(msg_data)
             return True
         except Exception as e:
             print(f"Error broadcasting file: {e}")
             return False
+
+    async def broadcast_voice_message(self, username: str, audio_data: dict) -> bool:
+        try:
+            # Extract base64 data and add padding if needed
+            content = audio_data["content"]
+            if "," in content:
+                base64_data = content.split(",")[1]
+            else:
+                base64_data = content
+            
+            # Add padding if necessary for base64 decoding
+            missing_padding = len(base64_data) % 4
+            if missing_padding:
+                base64_data += '=' * (4 - missing_padding)
+            
+            file_size = len(base64.b64decode(base64_data))
+            if file_size > MAX_VOICE_SIZE:
+                return False
+                
+            msg_data = {
+                "type": "voice_message",
+                "username": username,
+                "content": audio_data["content"],
+                "duration": audio_data.get("duration", 0),
+                "timestamp": datetime.now().isoformat()
+            }
+            messages.append(msg_data)
+            if len(messages) > MAX_MESSAGES:
+                messages.pop(0)
+            await self._broadcast_to_all(msg_data)
+            return True
+        except Exception as e:
+            print(f"Error broadcasting voice message: {e}")
+            return False
+
+    async def broadcast_video_message(self, username: str, video_data: dict) -> str:
+        """
+        Returns: 'success', 'too_large', 'invalid_data', or 'error'
+        """
+        try:
+            # Extract base64 data and add padding if needed
+            content = video_data["content"]
+            if "," in content:
+                # Remove data URL prefix (e.g., "data:video/webm;base64,")
+                base64_data = content.split(",")[1]
+            else:
+                base64_data = content
+              # Clean the base64 string - remove any whitespace or invalid characters
+            import re
+            # Keep only valid base64 characters: A-Z, a-z, 0-9, +, /, =
+            base64_data = re.sub(r'[^A-Za-z0-9+/=]', '', base64_data)
+            
+            # Add padding if necessary for base64 decoding
+            missing_padding = len(base64_data) % 4
+            if missing_padding:
+                base64_data += '=' * (4 - missing_padding)
+            
+            # Validate base64 and get file size
+            try:
+                decoded_data = base64.b64decode(base64_data, validate=True)
+                file_size = len(decoded_data)
+            except Exception as decode_error:
+                print(f"Base64 decode error in video message: {decode_error}")
+                return 'invalid_data'
+            
+            if file_size > MAX_VIDEO_SIZE:
+                print(f"Video message too large: {file_size} bytes (max {MAX_VIDEO_SIZE})")
+                return 'too_large'
+                
+            msg_data = {
+                "type": "video_message",
+                "username": username,
+                "content": video_data["content"],
+                "duration": video_data.get("duration", 0),
+                "thumbnail": video_data.get("thumbnail", ""),
+                "timestamp": datetime.now().isoformat()
+            }
+            messages.append(msg_data)
+            if len(messages) > MAX_MESSAGES:
+                messages.pop(0)
+            await self._broadcast_to_all(msg_data)
+            return 'success'
+        except Exception as e:
+            print(f"Error broadcasting video message: {e}")
+            return 'error'
 
     async def broadcast_typing_notification(self, username: str, is_typing: bool):
         msg_data = {
@@ -216,8 +302,9 @@ async def get_chat(request: Request, username: str = Query(...), lang: str = Que
                 "title": "Simple Messenger",
                 "message_placeholder": "Type your message...",                "send_button": "Send",
                 "file_button": "Choose File",
-                "call_button": "Start Video Call",
-                "attach_button": "Attach File",
+                "call_button": "Start Video Call",                "attach_button": "Attach File",
+                "voice_button": "Record Voice Message",
+                "video_message_button": "Record Video Message",
                 "video_call_button": "Start Video Call",
                 "end_call_button": "End Call",
                 "typing": "is typing...",
@@ -230,7 +317,28 @@ async def get_chat(request: Request, username: str = Query(...), lang: str = Que
                     "download": "Download",
                     "too_large": "File too large (max 5MB)",
                     "file_selected": "File selected"
-                },"video": {
+                },
+                "voice": {
+                    "recording": "Recording voice message...",
+                    "stop_recording": "Stop Recording",
+                    "start_recording": "Start Recording",
+                    "play": "Play",
+                    "pause": "Pause",
+                    "permission_error": "Microphone permission is required for voice messages",
+                    "record_error": "Error recording voice message",
+                    "too_large": "Voice message too large (max 10MB)"
+                },
+                "video_message": {
+                    "recording": "Recording video message...",
+                    "stop_recording": "Stop Recording",
+                    "start_recording": "Start Recording",
+                    "play": "Play",
+                    "pause": "Pause",
+                    "permission_error": "Camera and microphone permissions are required for video messages",
+                    "record_error": "Error recording video message",
+                    "too_large": "Video message too large (max 20MB)"
+                },
+                "video": {
                     "you": "You",
                     "remote": "Remote",
                     "remote_user": "Remote User",
@@ -267,8 +375,9 @@ async def get_chat(request: Request, username: str = Query(...), lang: str = Que
                 "title": "پیام‌رسان ساده",
                 "message_placeholder": "پیام خود را تایپ کنید...",                "send_button": "ارسال",
                 "file_button": "انتخاب فایل",
-                "call_button": "شروع تماس ویدیویی",
-                "attach_button": "پیوست فایل",
+                "call_button": "شروع تماس ویدیویی",                "attach_button": "پیوست فایل",
+                "voice_button": "ضبط پیام صوتی",
+                "video_message_button": "ضبط پیام ویدیویی",
                 "video_call_button": "شروع تماس ویدیویی",
                 "end_call_button": "پایان تماس",
                 "typing": "در حال تایپ...",
@@ -279,9 +388,29 @@ async def get_chat(request: Request, username: str = Query(...), lang: str = Que
                     "send_error": "خطا در ارسال فایل",
                     "read_error": "خطا در خواندن فایل",
                     "download": "دانلود",
-                    "too_large": "فایل خیلی بزرگ است (حداکثر ۵ مگابایت)",
-                    "file_selected": "فایل انتخاب شده"
-                },"video": {
+                    "too_large": "فایل خیلی بزرگ است (حداکثر ۵ مگابایت)",                    "file_selected": "فایل انتخاب شده"
+                },
+                "voice": {
+                    "recording": "در حال ضبط پیام صوتی...",
+                    "stop_recording": "توقف ضبط",
+                    "start_recording": "شروع ضبط",
+                    "play": "پخش",
+                    "pause": "مکث",
+                    "permission_error": "برای پیام صوتی نیاز به دسترسی میکروفون است",
+                    "record_error": "خطا در ضبط پیام صوتی",
+                    "too_large": "پیام صوتی خیلی بزرگ است (حداکثر ۱۰ مگابایت)"
+                },
+                "video_message": {
+                    "recording": "در حال ضبط پیام ویدیویی...",
+                    "stop_recording": "توقف ضبط",
+                    "start_recording": "شروع ضبط",
+                    "play": "پخش",
+                    "pause": "مکث",
+                    "permission_error": "برای پیام ویدیویی نیاز به دسترسی دوربین و میکروفون است",
+                    "record_error": "خطا در ضبط پیام ویدیویی",
+                    "too_large": "پیام ویدیویی خیلی بزرگ است (حداکثر ۲۰ مگابایت)"
+                },
+                "video": {
                     "you": "شما",
                     "remote": "طرف مقابل",
                     "remote_user": "کاربر طرف مقابل",
@@ -292,9 +421,9 @@ async def get_chat(request: Request, username: str = Query(...), lang: str = Que
                 },
                 "call": {
                     "permission_error": "برای تماس ویدیویی نیاز به دسترسی دوربین و میکروفون است",
-                    "start_error": "خطا در شروع تماس ویدیویی",
-                    "connection_error": "خطا در اتصال"
-                },"status": {
+                    "start_error": "خطا در شروع تماس ویدیویی",                    "connection_error": "خطا در اتصال"
+                },
+                "status": {
                     "connecting": "در حال اتصال...",
                     "connected": "متصل",
                     "disconnected": "قطع شده",
@@ -348,6 +477,30 @@ async def websocket_endpoint(websocket: WebSocket, username: str, lang: str = Qu
                         await websocket.send_text(json.dumps({
                             "type": "error",
                             "message": "File too large (max 5MB)"
+                        }))
+                        
+                elif msg_type == "voice_message":
+                    audio_data = msg.get("data", {})
+                    success = await manager.broadcast_voice_message(username, audio_data)
+                    if not success:                        await websocket.send_text(json.dumps({
+                            "type": "error",
+                            "message": "Voice message too large (max 10MB)"
+                        }))
+                        
+                elif msg_type == "video_message":
+                    video_data = msg.get("data", {})
+                    result = await manager.broadcast_video_message(username, video_data)
+                    if result != 'success':
+                        if result == 'too_large':
+                            error_msg = "Video message too large (max 20MB)"
+                        elif result == 'invalid_data':
+                            error_msg = "Invalid video data. Please try recording again."
+                        else:
+                            error_msg = "Error processing video message. Please try again."
+                        
+                        await websocket.send_text(json.dumps({
+                            "type": "error",
+                            "message": error_msg
                         }))
                         
                 elif msg_type == "typing":

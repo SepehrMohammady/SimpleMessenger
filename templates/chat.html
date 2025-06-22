@@ -343,12 +343,36 @@
         .btn-icon {
             background: transparent;
             color: var(--text-secondary);
-        }
-
-        .btn-icon:hover {
+        }        .btn-icon:hover {
             background: var(--bg-secondary);
             color: var(--accent-color);
-        }        .file-upload {
+        }
+
+        .btn-icon.recording {
+            background: #dc3545;
+            color: white;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .recording-timer {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            margin-bottom: 0.25rem;
+        }.file-upload {
             position: relative;
         }
 
@@ -738,12 +762,78 @@
             font-weight: 500;
             color: var(--text-primary);
             font-size: 0.9rem;
-        }
-
-        .audio-player {
+        }        .audio-player {
             width: 100%;
             height: 40px;
             margin-bottom: 0.5rem;
+        }
+
+        .voice-message, .video-message {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 0.75rem;
+            margin: 0.25rem 0;
+            max-width: 300px;
+        }
+
+        .voice-message-header, .video-message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .voice-message-controls, .video-message-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .message-duration {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .play-pause-btn {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .play-pause-btn:hover {
+            opacity: 0.8;
+        }
+
+        .waveform {
+            flex: 1;
+            height: 32px;
+            background: var(--border-color);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .waveform-progress {
+            height: 100%;
+            background: var(--accent-color);
+            border-radius: 16px;
+            width: 0%;
+            transition: width 0.1s ease;
+        }
+
+        .video-message video {
+            width: 100%;
+            max-width: 300px;
+            border-radius: 8px;
         }
 
         .file-actions {
@@ -795,6 +885,18 @@
                         </svg>
                     </button>                    <input type="file" id="fileInput" onchange="handleFileSelect(event)" style="display: none;"/>
                 </div>
+                <button class="btn btn-icon" onclick="toggleVoiceRecording()" id="voiceRecordBtn" title="{{ i18n.chat.voice.start_recording }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke-width="2"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" stroke-width="2"/>
+                    </svg>
+                </button>
+                <button class="btn btn-icon" onclick="toggleVideoMessageRecording()" id="videoMessageRecordBtn" title="{{ i18n.chat.video_message.start_recording }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <circle cx="12" cy="12" r="3" stroke-width="2"/>
+                        <path d="M20.188 10.934a2 2 0 0 1 0 2.132l-3.6 4.8a2 2 0 0 1-1.6.8H8.988a2 2 0 0 1-1.6-.8l-3.6-4.8a2 2 0 0 1 0-2.132l3.6-4.8a2 2 0 0 1 1.6-.8h6a2 2 0 0 1 1.6.8l3.6 4.8z" stroke-width="2"/>
+                    </svg>
+                </button>
                 <div id="fileStatus" class="file-status"></div>
             </div>
         </div>
@@ -834,9 +936,10 @@
     <script>
         // Global variables and constants
         const MAX_RECONNECT_ATTEMPTS = 5;
-        const TYPING_DEBOUNCE = 1000;
-        const TYPING_NOTIFICATION_INTERVAL = 3000;
-        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+        const TYPING_DEBOUNCE = 1000;        const TYPING_NOTIFICATION_INTERVAL = 3000;
+        const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB for files
+        const MAX_VOICE_SIZE = 10 * 1024 * 1024; // 10MB for voice messages
+        const MAX_VIDEO_SIZE = 20 * 1024 * 1024; // 20MB for video messages
         
         // Make i18n data available to JavaScript
         const i18n = {{ i18n | tojson | safe }};
@@ -851,9 +954,17 @@
         let typingTimeout = null;
         let lastTypingNotification = 0;
         let userTyping = new Set();
-        
-        // File handling state
+          // File handling state
         let selectedFile = null;
+        
+        // Voice and video message recording state
+        let isRecordingVoice = false;
+        let isRecordingVideoMessage = false;
+        let mediaRecorder = null;
+        let recordingStream = null;
+        let recordingChunks = [];
+        let recordingStartTime = 0;
+        let recordingTimer = null;
         
         // Utility functions
         function escapeHtml(text) {
@@ -983,8 +1094,7 @@
                 };                ws.onmessage = async (event) => {
                     try {
                         const data = JSON.parse(event.data);
-                        console.log('Received message:', data.type, data);
-                        switch (data.type) {
+                        console.log('Received message:', data.type, data);                        switch (data.type) {
                             case 'signal':
                                 console.log('Received WebRTC signal:', data);
                                 await handleSignal(data.data, data.username);
@@ -1001,6 +1111,11 @@
                                 break;
                             case 'file':
                                 handleFileMessage(data);
+                                break;
+                            case 'voice_message':
+                                handleVoiceMessage(data);
+                                break;                            case 'video_message':
+                                await handleVideoMessage(data);
                                 break;
                             case 'error':
                                 console.error('Server error:', data.message || data.data);
@@ -1304,8 +1419,225 @@
                 alert(i18n.chat.files.read_error);
                 selectedFile = null;
                 event.target.value = '';                document.getElementById('fileStatus').textContent = '';
-            };
-            reader.readAsDataURL(file);
+            };            reader.readAsDataURL(file);
+        }
+
+        function handleVoiceMessage(data) {
+            console.log('Handling voice message:', data);
+            const chat = document.getElementById('chat');
+            const isOwn = data.username === new URLSearchParams(window.location.search).get('username');
+            const div = document.createElement('div');
+            div.className = `message-group ${isOwn ? 'own' : ''}`;
+            
+            const audioId = `voice_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const playBtnId = `play_${audioId}`;
+            const progressId = `progress_${audioId}`;
+            
+            const content = `
+                <div class="voice-message">
+                    <div class="voice-message-header">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" stroke-width="2"/>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" stroke-width="2"/>
+                        </svg>
+                        <span>Voice Message</span>
+                        <span class="message-duration">${formatDuration(data.duration)}</span>
+                    </div>
+                    <div class="voice-message-controls">
+                        <button class="play-pause-btn" id="${playBtnId}" onclick="toggleVoicePlayback('${audioId}', '${playBtnId}', '${progressId}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3" stroke-width="2"></polygon>
+                            </svg>
+                        </button>
+                        <div class="waveform">
+                            <div class="waveform-progress" id="${progressId}"></div>
+                        </div>
+                    </div>
+                    <audio id="${audioId}" preload="metadata">
+                        <source src="${data.content}" type="audio/webm">
+                        <source src="${data.content}" type="audio/wav">
+                        Your browser does not support the audio element.
+                    </audio>
+                </div>
+            `;
+            
+            div.innerHTML = `
+                <div class="message">
+                    <div class="message-header">
+                        <span class="username">${data.username}</span>
+                        <span class="time">${new Date(data.timestamp).toLocaleTimeString()}</span>
+                    </div>
+                    <div class="message-content">${content}</div>
+                </div>
+            `;
+            
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }        async function handleVideoMessage(data) {
+            console.log('Handling video message:', data);
+            const chat = document.getElementById('chat');
+            const isOwn = data.username === new URLSearchParams(window.location.search).get('username');
+            const div = document.createElement('div');
+            div.className = `message-group ${isOwn ? 'own' : ''}`;
+            
+            const videoId = `video_msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;            // Convert base64 to blob URL for better video playback
+            try {
+                const base64Data = data.content.split(',')[1];
+                
+                // Clean the base64 string more thoroughly
+                const cleanBase64 = base64Data.replace(/[^A-Za-z0-9+/=]/g, '');
+                
+                // Add padding if necessary
+                const paddedBase64 = cleanBase64 + '='.repeat((4 - cleanBase64.length % 4) % 4);
+                
+                let videoUrl;
+                try {
+                    // Method 1: Convert via atob
+                    const binaryData = atob(paddedBase64);
+                    const arrayBuffer = new ArrayBuffer(binaryData.length);
+                    const uint8Array = new Uint8Array(arrayBuffer);
+                    for (let i = 0; i < binaryData.length; i++) {
+                        uint8Array[i] = binaryData.charCodeAt(i);
+                    }
+                    
+                    const videoBlob = new Blob([arrayBuffer], { type: 'video/webm' });
+                    videoUrl = URL.createObjectURL(videoBlob);
+                } catch (atobError) {
+                    console.warn('atob method failed, trying fetch method:', atobError);
+                    // Method 2: Use fetch to decode base64 data URL
+                    const response = await fetch(data.content);
+                    const videoBlob = await response.blob();
+                    videoUrl = URL.createObjectURL(videoBlob);
+                }
+                
+                const content = `
+                    <div class="video-message">
+                        <div class="video-message-header">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polygon points="23 7 16 12 23 17 23 7" stroke-width="2"></polygon>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" stroke-width="2"></rect>
+                            </svg>
+                            <span>Video Message</span>
+                            <span class="message-duration">${formatDuration(data.duration)}</span>
+                        </div>
+                        <video id="${videoId}" class="video-preview" controls preload="metadata" ${data.thumbnail ? `poster="${data.thumbnail}"` : ''}>
+                            <source src="${videoUrl}" type="video/webm">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                `;
+                
+                div.innerHTML = `
+                    <div class="message">
+                        <div class="message-header">
+                            <span class="username">${data.username}</span>
+                            <span class="time">${new Date(data.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                        <div class="message-content">${content}</div>
+                    </div>
+                `;
+                
+                // Clean up blob URL when the video element is removed from DOM
+                setTimeout(() => {
+                    const videoElement = document.getElementById(videoId);
+                    if (videoElement) {
+                        videoElement.addEventListener('loadeddata', () => {
+                            console.log('Video loaded successfully');
+                        });
+                        videoElement.addEventListener('error', (e) => {
+                            console.error('Video playback error:', e);
+                            // Fallback to direct base64 if blob fails
+                            videoElement.src = data.content;
+                        });
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('Error creating video blob:', error);
+                // Fallback to direct base64 data
+                const content = `
+                    <div class="video-message">
+                        <div class="video-message-header">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polygon points="23 7 16 12 23 17 23 7" stroke-width="2"></polygon>
+                                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" stroke-width="2"></rect>
+                            </svg>
+                            <span>Video Message</span>
+                            <span class="message-duration">${formatDuration(data.duration)}</span>
+                        </div>
+                        <video id="${videoId}" class="video-preview" controls preload="metadata" ${data.thumbnail ? `poster="${data.thumbnail}"` : ''}>
+                            <source src="${data.content}" type="video/webm">
+                            Your browser does not support the video tag.
+                        </video>
+                    </div>
+                `;
+                
+                div.innerHTML = `
+                    <div class="message">
+                        <div class="message-header">
+                            <span class="username">${data.username}</span>
+                            <span class="time">${new Date(data.timestamp).toLocaleTimeString()}</span>
+                        </div>
+                        <div class="message-content">${content}</div>
+                    </div>
+                `;
+            }
+            
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        // Voice message playback
+        function toggleVoicePlayback(audioId, playBtnId, progressId) {
+            const audio = document.getElementById(audioId);
+            const playBtn = document.getElementById(playBtnId);
+            const progress = document.getElementById(progressId);
+            
+            if (audio.paused) {
+                // Play
+                audio.play();
+                playBtn.innerHTML = `
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <rect x="6" y="4" width="4" height="16" stroke-width="2"></rect>
+                        <rect x="14" y="4" width="4" height="16" stroke-width="2"></rect>
+                    </svg>
+                `;
+                
+                // Update progress
+                const updateProgress = () => {
+                    if (!audio.paused) {
+                        const percent = (audio.currentTime / audio.duration) * 100;
+                        progress.style.width = `${percent}%`;
+                        requestAnimationFrame(updateProgress);
+                    }
+                };
+                updateProgress();
+                
+                // Reset button when audio ends
+                audio.onended = () => {
+                    playBtn.innerHTML = `
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polygon points="5 3 19 12 5 21 5 3" stroke-width="2"></polygon>
+                        </svg>
+                    `;
+                    progress.style.width = '0%';
+                };
+            } else {
+                // Pause
+                audio.pause();
+                playBtn.innerHTML = `
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3" stroke-width="2"></polygon>
+                    </svg>
+                `;
+            }
+        }
+
+        // Utility function to format duration
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
         }
         
         // WebRTC functions
@@ -1570,6 +1902,324 @@
                 console.log('Permissions API not supported, proceeding with media request');
                 return true;
             }
+        }
+        
+        // Voice message recording
+        async function toggleVoiceRecording() {
+            if (isRecordingVoice) {
+                stopVoiceRecording();
+            } else {
+                startVoiceRecording();
+            }
+        }        async function startVoiceRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 22050 // Lower sample rate for smaller files
+                    }
+                });
+                
+                recordingStream = stream;
+                recordingChunks = [];
+                
+                mediaRecorder = new MediaRecorder(stream, {
+                    mimeType: 'audio/webm;codecs=opus',
+                    audioBitsPerSecond: 48000 // 48 kbps for good quality but smaller size
+                });
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordingChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const audioBlob = new Blob(recordingChunks, { type: 'audio/webm;codecs=opus' });
+                    const duration = Math.round((Date.now() - recordingStartTime) / 1000);
+                    sendVoiceMessage(audioBlob, duration);
+                    
+                    // Clean up
+                    recordingStream.getTracks().forEach(track => track.stop());
+                    recordingStream = null;
+                };
+                
+                mediaRecorder.start();
+                isRecordingVoice = true;
+                recordingStartTime = Date.now();
+                
+                // Update UI
+                const recordBtn = document.getElementById('voiceRecordBtn');
+                recordBtn.classList.add('recording');
+                recordBtn.title = i18n.chat.voice.stop_recording;
+                
+                // Start timer
+                startRecordingTimer();
+                
+            } catch (error) {
+                console.error('Error starting voice recording:', error);
+                alert(i18n.chat.voice.permission_error);
+            }
+        }
+
+        function stopVoiceRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            
+            isRecordingVoice = false;
+            
+            // Update UI
+            const recordBtn = document.getElementById('voiceRecordBtn');
+            recordBtn.classList.remove('recording');
+            recordBtn.title = i18n.chat.voice.start_recording;
+            
+            // Stop timer
+            stopRecordingTimer();
+        }
+
+        // Video message recording
+        async function toggleVideoMessageRecording() {
+            if (isRecordingVideoMessage) {
+                stopVideoMessageRecording();
+            } else {
+                startVideoMessageRecording();
+            }
+        }        async function startVideoMessageRecording() {
+            try {
+                // Try lower resolution first for smaller file sizes
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 320, max: 480 }, 
+                        height: { ideal: 240, max: 360 },
+                        frameRate: { ideal: 10, max: 15 }
+                    }, 
+                    audio: { 
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        sampleRate: 22050
+                    }
+                });
+                
+                recordingStream = stream;
+                recordingChunks = [];
+                
+                // Try different codecs for better compression                // Try different codec options in order of compatibility
+                let options = {
+                    mimeType: 'video/webm;codecs=vp8,opus',
+                    videoBitsPerSecond: 250000, // 250 kbps for smaller files
+                    audioBitsPerSecond: 64000   // 64 kbps for audio
+                };
+                
+                // Fallback options
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { 
+                        mimeType: 'video/webm;codecs=vp8',
+                        videoBitsPerSecond: 250000
+                    };
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { 
+                        mimeType: 'video/webm',
+                        videoBitsPerSecond: 250000
+                    };
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { 
+                        mimeType: 'video/mp4',
+                        videoBitsPerSecond: 250000
+                    };
+                }
+                
+                mediaRecorder = new MediaRecorder(stream, options);
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordingChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    const videoBlob = new Blob(recordingChunks, { type: 'video/webm;codecs=vp8,opus' });
+                    const duration = Math.round((Date.now() - recordingStartTime) / 1000);
+                    sendVideoMessage(videoBlob, duration);
+                    
+                    // Clean up
+                    recordingStream.getTracks().forEach(track => track.stop());
+                    recordingStream = null;
+                };
+                
+                mediaRecorder.start();
+                isRecordingVideoMessage = true;
+                recordingStartTime = Date.now();
+                
+                // Update UI
+                const recordBtn = document.getElementById('videoMessageRecordBtn');
+                recordBtn.classList.add('recording');
+                recordBtn.title = i18n.chat.video_message.stop_recording;
+                
+                // Start timer
+                startRecordingTimer();
+                
+            } catch (error) {
+                console.error('Error starting video message recording:', error);
+                alert(i18n.chat.video_message.permission_error);
+            }
+        }
+
+        function stopVideoMessageRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            
+            isRecordingVideoMessage = false;
+            
+            // Update UI
+            const recordBtn = document.getElementById('videoMessageRecordBtn');
+            recordBtn.classList.remove('recording');
+            recordBtn.title = i18n.chat.video_message.start_recording;
+            
+            // Stop timer
+            stopRecordingTimer();
+        }
+
+        // Recording timer functions
+        function startRecordingTimer() {
+            const recordBtn = isRecordingVoice ? 
+                document.getElementById('voiceRecordBtn') : 
+                document.getElementById('videoMessageRecordBtn');
+            
+            const timer = document.createElement('div');
+            timer.className = 'recording-timer';
+            timer.id = 'recordingTimer';
+            recordBtn.parentNode.appendChild(timer);
+            
+            recordingTimer = setInterval(() => {
+                const elapsed = Math.round((Date.now() - recordingStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                timer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopRecordingTimer() {
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+            }
+            
+            const timer = document.getElementById('recordingTimer');
+            if (timer) {
+                timer.remove();
+            }
+        }
+
+        // Send voice message
+        async function sendVoiceMessage(audioBlob, duration) {
+            try {
+                const reader = new FileReader();
+                
+                reader.onload = async () => {
+                    const audioData = reader.result;
+                    
+                    if (audioBlob.size > MAX_VOICE_SIZE) {
+                        alert(i18n.chat.voice.too_large);
+                        return;
+                    }
+                    
+                    const success = await safeSendWebSocket({
+                        type: 'voice_message',
+                        data: {
+                            content: audioData,
+                            duration: duration
+                        }
+                    });
+                    
+                    if (!success) {
+                        alert(i18n.chat.voice.record_error);
+                    }
+                };
+                
+                reader.onerror = () => {
+                    console.error('Error reading audio blob:', reader.error);
+                    alert(i18n.chat.voice.record_error);
+                };
+                
+                reader.readAsDataURL(audioBlob);
+            } catch (error) {
+                console.error('Error sending voice message:', error);
+                alert(i18n.chat.voice.record_error);
+            }
+        }
+
+        // Send video message
+        async function sendVideoMessage(videoBlob, duration) {
+            try {
+                const reader = new FileReader();
+                
+                reader.onload = async () => {
+                    const videoData = reader.result;
+                    
+                    if (videoBlob.size > MAX_VIDEO_SIZE) {
+                        alert(i18n.chat.video_message.too_large);
+                        return;
+                    }
+                    
+                    // Generate thumbnail
+                    const thumbnail = await generateVideoThumbnail(videoBlob);
+                    
+                    const success = await safeSendWebSocket({
+                        type: 'video_message',
+                        data: {
+                            content: videoData,
+                            duration: duration,
+                            thumbnail: thumbnail
+                        }
+                    });
+                    
+                    if (!success) {
+                        alert(i18n.chat.video_message.record_error);
+                    }
+                };
+                
+                reader.onerror = () => {
+                    console.error('Error reading video blob:', reader.error);
+                    alert(i18n.chat.video_message.record_error);
+                };
+                
+                reader.readAsDataURL(videoBlob);
+            } catch (error) {
+                console.error('Error sending video message:', error);
+                alert(i18n.chat.video_message.record_error);
+            }
+        }
+
+        // Generate video thumbnail
+        async function generateVideoThumbnail(videoBlob) {
+            return new Promise((resolve) => {
+                const video = document.createElement('video');
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                video.onloadedmetadata = () => {
+                    canvas.width = 320;
+                    canvas.height = (video.videoHeight / video.videoWidth) * 320;
+                    
+                    video.currentTime = 0.5; // Capture at 0.5 seconds
+                };
+                
+                video.onseeked = () => {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.7));
+                };
+                
+                video.onerror = () => {
+                    resolve(''); // Return empty string if thumbnail generation fails
+                };
+                
+                video.src = URL.createObjectURL(videoBlob);
+            });
         }
     </script>
 </body>

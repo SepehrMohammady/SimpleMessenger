@@ -1,4 +1,4 @@
-const CACHE_NAME = 'messenger-cache-v1';
+const CACHE_NAME = 'messenger-cache-v2';
 const ASSETS_TO_CACHE = [
     '/',
     '/static/manifest.json',
