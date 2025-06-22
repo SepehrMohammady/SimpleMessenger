@@ -939,20 +939,22 @@
             <div class="messages" id="chat"></div>
             <div class="typing-indicator" id="typingIndicator"></div>            <div class="input-container">                <input type="text" id="messageInput" class="message-input" 
                        placeholder="{{ i18n.chat.message_placeholder }}" autocomplete="off"/>
-                
-                <div class="input-buttons">
+                  <div class="input-buttons">
                     <button class="btn btn-icon" onclick="sendMessage()" title="{{ i18n.chat.send_button }}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke-width="2" 
                                   stroke-linecap="round" stroke-linejoin="round"/>
                         </svg>
                     </button>
-                    <button class="btn btn-icon" onclick="startCall()" title="{{ i18n.chat.call_button }}">
+                    <!-- Temporarily hidden: Video Call button
+                    <button class="btn btn-icon" onclick="startCall()" title="{{ i18n.chat.call_button }}" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <path d="M23 7l-7 5 7 5V7z" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             <rect x="1" y="5" width="15" height="14" rx="2" ry="2" stroke-width="2"/>
                         </svg>
-                    </button>                    <div class="file-upload">
+                    </button>
+                    -->
+                    <div class="file-upload">
                         <button type="button" class="btn btn-icon" onclick="document.getElementById('fileInput').click()" title="{{ i18n.chat.attach_button }}">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 16.2a2 2 0 0 1-2.83-2.83l8.49-8.49" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -965,12 +967,14 @@
                             <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8" stroke-width="2"/>
                         </svg>
                     </button>
-                    <button class="btn btn-icon" onclick="toggleVideoMessageRecording()" id="videoMessageRecordBtn" title="{{ i18n.chat.video_message.start_recording }}">
+                    <!-- Temporarily hidden: Video Message button
+                    <button class="btn btn-icon" onclick="toggleVideoMessageRecording()" id="videoMessageRecordBtn" title="{{ i18n.chat.video_message.start_recording }}" style="display: none;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
                             <circle cx="12" cy="12" r="3" stroke-width="2"/>
                             <path d="M20.188 10.934a2 2 0 0 1 0 2.132l-3.6 4.8a2 2 0 0 1-1.6.8H8.988a2 2 0 0 1-1.6-.8l-3.6-4.8a2 2 0 0 1 0-2.132l3.6-4.8a2 2 0 0 1 1.6-.8h6a2 2 0 0 1 1.6.8l3.6 4.8z" stroke-width="2"/>
                         </svg>
                     </button>
+                    -->
                 </div>
                 
                 <div id="fileStatus" class="file-status"></div>
