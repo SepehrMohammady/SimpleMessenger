@@ -11,10 +11,11 @@ A modern, secure web-based messenger application with real-time chat, video call
 - Message history (in-memory)
 
 ### 🎥 **Video & Audio Calls**
-- Video/Audio calls using WebRTC
+- Video/Audio calls using WebRTC *(2-person limit)*
 - Camera and microphone controls
 - Mute/unmute functionality
 - Full-screen call interface
+- **Note**: Video calls work between 2 people only. Multiple users can chat and share files, but video calling is peer-to-peer between any 2 participants.
 
 ### 📁 **Enhanced File Sharing**
 - **Image Previews**: Inline thumbnails with click-to-expand modal
@@ -104,8 +105,26 @@ A modern, secure web-based messenger application with real-time chat, video call
 - 💾 Persistent message history with database
 - 🔒 End-to-end encryption
 - 👥 Multi-room chat support
-- 📤 Advanced file sharing (larger files, cloud storage)
+- � **Group video calls** (3+ participants)
+- �📤 Advanced file sharing (larger files, cloud storage)
 - 🎬 Screen sharing capabilities
+- 📞 Call management (reject, busy status, call queue)
+
+## ⚠️ **Important Limitations**
+
+### **Video Call Capacity**
+- **Maximum 2 people** can video call simultaneously
+- **Unlimited text chat** - any number of users can join for messaging
+- **File sharing works** for all users
+- When 3+ people are online:
+  - ✅ Everyone can chat and share files
+  - ⚠️ Only 2 people can video call at a time
+  - 💡 Third person and beyond can see the chat but not join video calls
+
+### **Multi-User Scenarios**
+- **2 users**: Full functionality (chat + video calls)
+- **3+ users**: Chat and file sharing only, video calls limited to 2 participants
+- **Recommendation**: For group video calls, consider using dedicated platforms like Zoom, Google Meet, or Microsoft Teams
 
 ---
 
