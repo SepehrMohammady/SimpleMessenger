@@ -23,7 +23,7 @@ A modern, secure web-based messenger application with real-time chat, video call
 - **Audio Previews**: Inline audio player for music/voice files
 - **PDF Support**: View PDF in browser or download
 - **File Type Detection**: Smart icons for different file types
-- **5MB file size limit** with user-friendly error handling
+- **File Size Limits**: 5MB for regular files, 10MB for voice messages, 20MB for video messages
 
 ### 🎤 **Voice & Video Messages**
 - **Voice Messages**: Record and send audio messages with one-click recording
