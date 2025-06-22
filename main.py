@@ -38,6 +38,9 @@ MAX_FILE_SIZE = int(os.environ.get("MAX_FILE_SIZE", str(5 * 1024 * 1024)))  # De
 MAX_VOICE_SIZE = int(os.environ.get("MAX_VOICE_SIZE", str(10 * 1024 * 1024)))  # 10MB for voice messages
 MAX_VIDEO_SIZE = int(os.environ.get("MAX_VIDEO_SIZE", str(20 * 1024 * 1024)))  # 20MB for video messages
 
+# Access control
+ACCESS_KEY = os.environ.get("ACCESS_KEY", "45000")  # Can be overridden via environment variable
+
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}  # username -> websocket
@@ -242,7 +245,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 @app.get("/")
-async def get_login(request: Request, lang: str = Query("en")):
+async def get_login(request: Request, lang: str = Query("en"), error: str = Query(None)):
     # Ensure lang is valid
     if lang not in ["en", "fa"]:
         lang = "en"
@@ -251,10 +254,13 @@ async def get_login(request: Request, lang: str = Query("en")):
         "en": {
             "login": {
                 "title": "Simple Messenger",
-                "username_placeholder": "Enter your username",
+                "access_key_placeholder": "Enter access key",
+                "username_placeholder": "Enter your username", 
                 "join_button": "Join Chat",
                 "validation": {
                     "required": "Username is required",
+                    "access_key_required": "Access key is required",
+                    "invalid_access_key": "Invalid access key",
                     "min_length": "Username must be at least 3 characters",
                     "max_length": "Username must be less than 15 characters",
                     "invalid_chars": "Username can only contain letters and numbers"
@@ -267,10 +273,13 @@ async def get_login(request: Request, lang: str = Query("en")):
         "fa": {
             "login": {
                 "title": "پیام‌رسان ساده",
+                "access_key_placeholder": "کد دسترسی را وارد کنید",
                 "username_placeholder": "نام کاربری خود را وارد کنید",
                 "join_button": "ورود به چت",
                 "validation": {
                     "required": "نام کاربری الزامی است",
+                    "access_key_required": "کد دسترسی الزامی است",
+                    "invalid_access_key": "کد دسترسی نامعتبر است",
                     "min_length": "نام کاربری باید حداقل ۳ کاراکتر باشد",
                     "max_length": "نام کاربری باید کمتر از ۱۵ کاراکتر باشد",
                     "invalid_chars": "نام کاربری فقط می‌تواند شامل حروف و اعداد باشد"
@@ -285,7 +294,8 @@ async def get_login(request: Request, lang: str = Query("en")):
     return templates.TemplateResponse("login.html", {
         "request": request,
         "i18n": i18n_data[lang],
-        "lang": lang
+        "lang": lang,
+        "error": error
     })
 
 @app.get("/favicon.ico")
@@ -293,9 +303,59 @@ async def favicon():
     return FileResponse("static/favicon.ico")
 
 @app.get("/chat")
-async def get_chat(request: Request, username: str = Query(...), lang: str = Query("en")):
+async def get_chat(request: Request, username: str = Query(...), access_key: str = Query(...), lang: str = Query("en")):
+    # Validate access key first
+    if access_key != ACCESS_KEY:
+        # Redirect back to login with error
+        error_msg = "invalid_access_key" if lang == "en" else "invalid_access_key"
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": error_msg,
+            "lang": lang,
+            "i18n": {
+                "en": {
+                    "login": {
+                        "title": "Simple Messenger",
+                        "access_key_placeholder": "Enter access key",
+                        "username_placeholder": "Enter your username", 
+                        "join_button": "Join Chat",
+                        "validation": {
+                            "required": "Username is required",
+                            "access_key_required": "Access key is required",
+                            "invalid_access_key": "Invalid access key",
+                            "min_length": "Username must be at least 3 characters",
+                            "max_length": "Username must be less than 15 characters",
+                            "invalid_chars": "Username can only contain letters and numbers"
+                        }
+                    },
+                    "pwa": {
+                        "install": "Install App"
+                    }
+                },
+                "fa": {
+                    "login": {
+                        "title": "پیام‌رسان ساده",
+                        "access_key_placeholder": "کد دسترسی را وارد کنید",
+                        "username_placeholder": "نام کاربری خود را وارد کنید",
+                        "join_button": "ورود به چت",
+                        "validation": {
+                            "required": "نام کاربری الزامی است",
+                            "access_key_required": "کد دسترسی الزامی است",
+                            "invalid_access_key": "کد دسترسی نامعتبر است",
+                            "min_length": "نام کاربری باید حداقل ۳ کاراکتر باشد",
+                            "max_length": "نام کاربری باید کمتر از ۱۵ کاراکتر باشد",
+                            "invalid_chars": "نام کاربری فقط می‌تواند شامل حروف و اعداد باشد"
+                        }
+                    },
+                    "pwa": {
+                        "install": "نصب اپلیکیشن"
+                    }
+                }
+            }[lang]
+        })
+    
     if lang not in ["en", "fa"]:
-        lang = "en"    # i18n data for chat
+        lang = "en"# i18n data for chat
     i18n_data = {
         "en": {
             "chat": {
