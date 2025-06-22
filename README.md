@@ -98,6 +98,7 @@ A modern, secure web-based messenger application with real-time chat, video call
 - ✅ **Improved file type support** (images, videos, audio, PDF)
 - ✅ **Cleaned up legacy code** and unused dependencies
 - ✅ **Better error handling** for file operations
+- ✅ **Fixed GitHub Actions** - removed failing deployment workflows
 
 ## 🔮 Future Enhancements
 
