@@ -39,6 +39,12 @@ A modern, secure web-based messenger application with real-time chat, video call
 - 📱 **Responsive Design**: Works on mobile and desktop
 - 🎨 **Modern UI**: Clean interface with smooth animations
 - ⚡ **Progressive Web App**: Installable with offline capabilities
+- 🔔 **Browser Notifications**: Smart alerts for new messages when tab is inactive
+
+### 🔒 **Security Features**
+- 🔐 **Access Key Protection**: Secure access with configurable access codes
+- 🛡️ **Multi-layer validation**: Frontend and backend security checks
+- 🌍 **Environment-based configuration**: Production-ready security settings
 
 ### 🔧 **Technical Features**
 - Clean, optimized codebase
@@ -48,6 +54,8 @@ A modern, secure web-based messenger application with real-time chat, video call
 - WebSocket auto-reconnection
 - Cross-platform compatibility
 - Production-ready CORS and security headers
+- Smart page visibility detection for notifications
+- Battery-efficient notification system
 
 ## 🚀 **Quick Deploy**
 

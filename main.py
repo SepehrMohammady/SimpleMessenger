@@ -417,10 +417,22 @@ async def get_chat(request: Request, username: str = Query(...), access_key: str
                     "disconnected": "Disconnected",
                     "connection_error": "Connection Error",
                     "error": "Error"
-                },
-                "typing": {
+                },                "typing": {
                     "single": "{username} is typing...",
                     "multiple": "{usernames} are typing..."
+                },
+                "notifications": {
+                    "permission_request": "Enable notifications to get alerts when you receive messages",
+                    "permission_denied": "Notifications are disabled. You can enable them in your browser settings.",
+                    "new_message": "New message from {username}",
+                    "new_voice_message": "New voice message from {username}",
+                    "new_video_message": "New video message from {username}",
+                    "new_file": "New file from {username}",
+                    "user_joined": "{username} joined the chat",
+                    "user_left": "{username} left the chat",
+                    "enable_button": "Enable Notifications",
+                    "enabled": "Notifications enabled",
+                    "not_supported": "Notifications are not supported in this browser"
                 }
             },
             "theme": {
@@ -489,10 +501,22 @@ async def get_chat(request: Request, username: str = Query(...), access_key: str
                     "disconnected": "قطع شده",
                     "connection_error": "خطای اتصال",
                     "error": "خطا"
-                },
-                "typing": {
+                },                "typing": {
                     "single": "{username} در حال تایپ است...",
                     "multiple": "{usernames} در حال تایپ هستند..."
+                },
+                "notifications": {
+                    "permission_request": "اعلان‌ها را فعال کنید تا هنگام دریافت پیام آگاه شوید",
+                    "permission_denied": "اعلان‌ها غیرفعال هستند. می‌توانید آنها را در تنظیمات مرورگر فعال کنید.",
+                    "new_message": "پیام جدید از {username}",
+                    "new_voice_message": "پیام صوتی جدید از {username}",
+                    "new_video_message": "پیام ویدیویی جدید از {username}",
+                    "new_file": "فایل جدید از {username}",
+                    "user_joined": "{username} وارد چت شد",
+                    "user_left": "{username} چت را ترک کرد",
+                    "enable_button": "فعال‌سازی اعلان‌ها",
+                    "enabled": "اعلان‌ها فعال شدند",
+                    "not_supported": "اعلان‌ها در این مرورگر پشتیبانی نمی‌شوند"
                 }
             },
             "theme": {

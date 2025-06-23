@@ -919,9 +919,7 @@
         <div class="status" id="status" data-state="connecting">
             <div class="loading"></div>
             {{ i18n.chat.status.connecting }}
-        </div>
-    
-        <div class="header-controls">
+        </div>        <div class="header-controls">
             <select class="language-selector" id="languageSelector" onchange="changeLanguage(this.value)">
                 <option value="en" {% if lang == 'en' %}selected{% endif %}>EN</option>
                 <option value="fa" {% if lang == 'fa' %}selected{% endif %}>فا</option>
@@ -929,6 +927,11 @@
             <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="{{ i18n.theme.toggle }}">
                 <svg viewBox="0 0 24 24" width="24" height="24" class="theme-icon">
                     <path fill="currentColor" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9c0-.46-.04-.92-.1-1.36-.98 1.37-2.58 2.26-4.4 2.26-3.03 0-5.5-2.47-5.5-5.5 0-1.82.89-3.42 2.26-4.4-.44-.06-.9-.1-1.36-.1z"/>
+                </svg>
+            </button>
+            <button class="theme-toggle" id="notificationToggle" onclick="requestNotificationPermission()" title="{{ i18n.chat.notifications.enable_button }}" style="display: none;">
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                    <path fill="currentColor" d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
                 </svg>
             </button>
         </div>
@@ -1036,8 +1039,7 @@
         let userTyping = new Set();
           // File handling state
         let selectedFile = null;
-        
-        // Voice and video message recording state
+          // Voice and video message recording state
         let isRecordingVoice = false;
         let isRecordingVideoMessage = false;
         let mediaRecorder = null;
@@ -1045,6 +1047,11 @@
         let recordingChunks = [];
         let recordingStartTime = 0;
         let recordingTimer = null;
+        
+        // Notification state
+        let notificationPermission = false;
+        let isPageVisible = true;
+        let notificationsEnabled = false;
         
         // Utility functions
         function escapeHtml(text) {
@@ -1073,9 +1080,178 @@
                     modal.remove();
                 }
             };
+              document.body.appendChild(modal);
+        }        // Notification system
+        async function initializeNotifications() {
+            const notificationButton = document.getElementById('notificationToggle');
             
-            document.body.appendChild(modal);
-        }        // WebRTC state
+            if (!('Notification' in window)) {
+                console.log('Browser does not support notifications');
+                // Keep button hidden
+                return;
+            }
+
+            // Check current permission
+            if (Notification.permission === 'granted') {
+                notificationPermission = true;
+                notificationsEnabled = true;
+                console.log('Notifications already granted');
+                // Hide button since notifications are already enabled
+                return;
+            }
+
+            if (Notification.permission === 'denied') {
+                console.log('Notifications denied by user');
+                // Keep button hidden since user denied
+                return;
+            }
+
+            // Show button for requesting permission
+            if (notificationButton) {
+                notificationButton.style.display = 'block';
+            }
+            console.log('Notifications permission not requested yet - button shown');
+        }        async function requestNotificationPermission() {
+            const notificationButton = document.getElementById('notificationToggle');
+            
+            if (!('Notification' in window)) {
+                console.log('Browser does not support notifications');
+                alert(i18n.chat.notifications.not_supported);
+                return false;
+            }
+
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    notificationPermission = true;
+                    notificationsEnabled = true;
+                    console.log('Notification permission granted');
+                    
+                    // Hide the button since notifications are now enabled
+                    if (notificationButton) {
+                        notificationButton.style.display = 'none';
+                    }
+                    
+                    // Show success message
+                    appendSystemMessage(i18n.chat.notifications.enabled);
+                    
+                    // Test notification
+                    showNotification('Simple Messenger', i18n.chat.notifications.enabled, '/static/icons/icon-192x192.png');
+                    
+                    return true;
+                } else {
+                    console.log('Notification permission denied');
+                    appendSystemMessage(i18n.chat.notifications.permission_denied);
+                    
+                    // Hide the button since user denied permission
+                    if (notificationButton) {
+                        notificationButton.style.display = 'none';
+                    }
+                    
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error requesting notification permission:', error);
+                return false;
+            }
+        }
+
+        function showNotification(title, body, icon = '/static/icons/icon-192x192.png') {
+            if (!notificationPermission || !notificationsEnabled || isPageVisible) {
+                return; // Don't show notification if page is visible
+            }
+
+            try {
+                const notification = new Notification(title, {
+                    body: body,
+                    icon: icon,
+                    badge: '/static/icons/icon-192x192.png',
+                    tag: 'messenger-notification', // Prevent duplicate notifications
+                    requireInteraction: false,
+                    silent: false
+                });
+
+                // Auto-close after 5 seconds
+                setTimeout(() => {
+                    notification.close();
+                }, 5000);
+
+                // Focus window when notification is clicked
+                notification.onclick = () => {
+                    window.focus();
+                    notification.close();
+                };
+
+                console.log('Notification shown:', title, body);
+            } catch (error) {
+                console.error('Error showing notification:', error);
+            }
+        }
+
+        function handleMessageNotification(data) {
+            if (!notificationPermission || !notificationsEnabled || isPageVisible) {
+                return;
+            }
+
+            const username = data.username || 'Unknown User';
+            let title = 'Simple Messenger';
+            let body = '';
+
+            switch (data.type) {
+                case 'chat':
+                case 'message':
+                    body = i18n.chat.notifications.new_message.replace('{username}', username);
+                    break;
+                case 'voice_message':
+                    body = i18n.chat.notifications.new_voice_message.replace('{username}', username);
+                    break;
+                case 'video_message':
+                    body = i18n.chat.notifications.new_video_message.replace('{username}', username);
+                    break;
+                case 'file':
+                    body = i18n.chat.notifications.new_file.replace('{username}', username);
+                    break;
+                case 'system':
+                    if (data.content.includes('joined')) {
+                        body = i18n.chat.notifications.user_joined.replace('{username}', username);
+                    } else if (data.content.includes('left')) {
+                        body = i18n.chat.notifications.user_left.replace('{username}', username);
+                    } else {
+                        body = data.content;
+                    }
+                    break;
+                default:
+                    return; // Don't show notification for unknown message types
+            }
+
+            if (body) {
+                showNotification(title, body);
+            }
+        }
+
+        // Track page visibility
+        function initializePageVisibility() {
+            // Initial state
+            isPageVisible = !document.hidden;
+
+            // Listen for visibility changes
+            document.addEventListener('visibilitychange', () => {
+                isPageVisible = !document.hidden;
+                console.log('Page visibility changed:', isPageVisible ? 'visible' : 'hidden');
+            });
+
+            // Also track focus/blur
+            window.addEventListener('focusin', () => {
+                isPageVisible = true;
+            });
+
+            window.addEventListener('focusout', () => {
+                isPageVisible = false;
+            });
+        }
+
+        // WebRTC state
         window.pc = null; // Using window.pc to avoid scope issues
         let localStream = null;
         let remoteUsername = null; // Track who we're calling
@@ -1119,11 +1295,12 @@
                 if (!username) {
                     window.location.href = '/';
                     return;
-                }
-                initializeWebSocket(username);
+                }                initializeWebSocket(username);
                 setupEventListeners();
                 initializeTheme();
-                initializePWA();            } catch (error) {
+                initializePWA();
+                initializeNotifications();
+                initializePageVisibility();} catch (error) {
                 console.error('Initialization error:', error);
                 updateStatus('error', 'Connection error');
             }
@@ -1181,20 +1358,25 @@
                                 break;
                             case 'chat':
                             case 'message':
+                                handleMessageNotification(data.data || data);
                                 appendMessage(data.data || data);
                                 break;
                             case 'system':
+                                handleMessageNotification({ type: 'system', content: data.content });
                                 appendSystemMessage(data.content);
                                 break;
                             case 'typing':
                                 handleTypingIndicator(data.username, data.isTyping);
                                 break;
                             case 'file':
+                                handleMessageNotification(data);
                                 handleFileMessage(data);
                                 break;
                             case 'voice_message':
+                                handleMessageNotification(data);
                                 handleVoiceMessage(data);
                                 break;                            case 'video_message':
+                                handleMessageNotification(data);
                                 await handleVideoMessage(data);
                                 break;
                             case 'error':
