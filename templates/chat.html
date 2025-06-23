@@ -133,12 +133,18 @@
             justify-content: space-between;
             align-items: center;
             gap: 1rem;
-        }
-
-        .header-controls {
+        }        .header-controls {
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            flex-wrap: nowrap;
+        }
+
+        /* Ensure notification button is always visible initially */
+        #notificationToggle {
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
         }
 
         .theme-toggle {
@@ -735,16 +741,17 @@
             /* Ensure file upload container doesn't break layout */
             .file-upload {
                 display: flex;
-            }
-
-            /* Mobile header controls - ensure notification button is visible */
+            }            /* Mobile header controls - ensure notification button is visible */
             .header {
                 padding: 0.75rem;
+                min-height: 60px;
             }
             
             .header-controls {
                 gap: 0.25rem;
                 flex-wrap: nowrap;
+                flex-shrink: 0;
+                min-width: auto;
             }
             
             .theme-toggle {
@@ -752,9 +759,25 @@
                 min-width: 40px;
                 min-height: 40px;
                 border-radius: 50%;
-                display: flex;
+                display: flex !important;
                 align-items: center;
                 justify-content: center;
+                flex-shrink: 0;
+                background: none;
+                border: none;
+                cursor: pointer;
+            }
+            
+            /* Force notification button to be visible on mobile */
+            #notificationToggle {
+                display: flex !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                position: relative !important;
+                width: 40px !important;
+                height: 40px !important;
+                min-width: 40px !important;
+                min-height: 40px !important;
             }
             
             .theme-toggle svg {
@@ -766,6 +789,7 @@
                 font-size: 0.75rem;
                 padding: 0.25rem 0.4rem;
                 min-width: 40px;
+                flex-shrink: 0;
             }
             
             /* Ensure status doesn't take up too much space */
@@ -1143,41 +1167,49 @@
         async function initializeNotifications() {
             const notificationButton = document.getElementById('notificationToggle');
             
-            if (!('Notification' in window)) {
-                console.log('Browser does not support notifications');
-                // Hide button since notifications aren't supported
-                if (notificationButton) {
-                    notificationButton.style.display = 'none';
-                }
+            // Add debug logging for mobile troubleshooting
+            console.log('🔔 Notification Debug Info:');
+            console.log('- Button element found:', !!notificationButton);
+            console.log('- Notification support:', 'Notification' in window);
+            console.log('- Current permission:', window.Notification ? Notification.permission : 'N/A');
+            console.log('- User agent:', navigator.userAgent);
+            console.log('- Viewport width:', window.innerWidth);
+            
+            if (!notificationButton) {
+                console.error('❌ Notification button not found in DOM!');
                 return;
             }
+            
+            if (!('Notification' in window)) {
+                console.log('❌ Browser does not support notifications');
+                notificationButton.style.display = 'none';
+                return;
+            }
+
+            // For testing: always show button initially, then hide after permission granted
+            notificationButton.style.display = 'flex';
+            notificationButton.style.visibility = 'visible';
+            console.log('✅ Notification button set to visible');
 
             // Check current permission
             if (Notification.permission === 'granted') {
                 notificationPermission = true;
                 notificationsEnabled = true;
-                console.log('Notifications already granted');
-                // Hide button since notifications are already enabled
-                if (notificationButton) {
+                console.log('✅ Notifications already granted - hiding button');
+                setTimeout(() => {
                     notificationButton.style.display = 'none';
-                }
+                }, 1000); // Delay hiding so you can see it first
                 return;
             }
 
             if (Notification.permission === 'denied') {
-                console.log('Notifications denied by user');
-                // Hide button since user previously denied
-                if (notificationButton) {
-                    notificationButton.style.display = 'none';
-                }
+                console.log('⚠️ Notifications denied by user - keeping button visible for reset');
+                // Keep button visible so user can try again or see debug info
                 return;
             }
 
             // Show button for requesting permission (default state)
-            if (notificationButton) {
-                notificationButton.style.display = 'block';
-            }
-            console.log('Notifications permission not requested yet - button shown');
+            console.log('📱 Notifications permission not requested yet - button shown');
         }async function requestNotificationPermission() {
             const notificationButton = document.getElementById('notificationToggle');
             
@@ -1295,9 +1327,7 @@
             if (body) {
                 showNotification(title, body);
             }
-        }
-
-        // Track page visibility
+        }        // Track page visibility
         function initializePageVisibility() {
             // Initial state
             isPageVisible = !document.hidden;
@@ -1317,6 +1347,44 @@
                 isPageVisible = false;
             });
         }
+
+        // Debug function for mobile troubleshooting - call from browser console
+        window.debugNotifications = function() {
+            console.log('🔍 NOTIFICATION DEBUG REPORT:');
+            console.log('='.repeat(50));
+            
+            const button = document.getElementById('notificationToggle');
+            console.log('🔔 Button Info:');
+            console.log('- Element exists:', !!button);
+            if (button) {
+                console.log('- Display style:', getComputedStyle(button).display);
+                console.log('- Visibility:', getComputedStyle(button).visibility);
+                console.log('- Opacity:', getComputedStyle(button).opacity);
+                console.log('- Position:', getComputedStyle(button).position);
+                console.log('- Width:', getComputedStyle(button).width);
+                console.log('- Height:', getComputedStyle(button).height);
+                console.log('- Z-index:', getComputedStyle(button).zIndex);
+                console.log('- Button innerHTML:', button.innerHTML);
+            }
+            
+            console.log('\n📱 Browser Info:');
+            console.log('- User Agent:', navigator.userAgent);
+            console.log('- Viewport:', window.innerWidth + 'x' + window.innerHeight);
+            console.log('- Device Pixel Ratio:', window.devicePixelRatio);
+            console.log('- Touch Support:', 'ontouchstart' in window);
+            
+            console.log('\n🔔 Notification Info:');
+            console.log('- Notification API:', 'Notification' in window);
+            if ('Notification' in window) {
+                console.log('- Permission:', Notification.permission);
+                console.log('- Max Actions:', Notification.maxActions);
+            }
+            
+            console.log('\n🎯 To force show button, run:');
+            console.log('document.getElementById("notificationToggle").style.display = "flex"');
+            
+            return 'Debug complete! Check console output above.';
+        };
 
         // WebRTC state
         window.pc = null; // Using window.pc to avoid scope issues
