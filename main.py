@@ -411,13 +411,15 @@ async def get_chat(request: Request, username: str = Query(...), access_key: str
                     "permission_error": "Camera and microphone permissions are required for video calls",
                     "start_error": "Failed to start video call",
                     "connection_error": "Connection failed"
-                },"status": {
+                },                "status": {
                     "connecting": "Connecting...",
                     "connected": "Connected",
                     "disconnected": "Disconnected",
+                    "reconnecting": "Reconnecting...",
+                    "reconnecting_attempt": "Reconnecting...",
                     "connection_error": "Connection Error",
                     "error": "Error"
-                },                "typing": {
+                },"typing": {
                     "single": "{username} is typing...",
                     "multiple": "{usernames} are typing..."
                 },
@@ -494,14 +496,15 @@ async def get_chat(request: Request, username: str = Query(...), access_key: str
                 "call": {
                     "permission_error": "برای تماس ویدیویی نیاز به دسترسی دوربین و میکروفون است",
                     "start_error": "خطا در شروع تماس ویدیویی",                    "connection_error": "خطا در اتصال"
-                },
-                "status": {
+                },                "status": {
                     "connecting": "در حال اتصال...",
                     "connected": "متصل",
                     "disconnected": "قطع شده",
+                    "reconnecting": "در حال اتصال مجدد...",
+                    "reconnecting_attempt": "در حال اتصال مجدد...",
                     "connection_error": "خطای اتصال",
                     "error": "خطا"
-                },                "typing": {
+                },"typing": {
                     "single": "{username} در حال تایپ است...",
                     "multiple": "{usernames} در حال تایپ هستند..."
                 },

@@ -202,8 +202,42 @@
             font-weight: bold;
         }
 
+        .status[data-state="reconnecting"] {
+            color: #0d6efd;
+            font-weight: bold;
+        }
+
+        .status[data-state="reconnecting_attempt"] {
+            color: #0d6efd;
+            font-weight: bold;
+        }
+
         .status[data-state="error"] {
             color: #dc3545;
+        }
+
+        .refresh-button {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 4px;
+            margin-left: 0.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-button:hover {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #b02a37;
+        }
+
+        .refresh-button svg {
+            width: 16px;
+            height: 16px;
         }
 
         .loading {
@@ -989,9 +1023,7 @@
             width: 100%;
             max-width: 300px;
             border-radius: 8px;
-        }
-
-        .file-actions {
+        }        .file-actions {
             display: flex;
             gap: 1rem;
             align-items: center;
@@ -1439,19 +1471,57 @@
                 console.error('Initialization error:', error);
                 updateStatus('error', 'Connection error');
             }
-        })();
-
-        function updateStatus(state, message) {
+        })();        function updateStatus(state, message) {
             const statusElement = document.getElementById("status");
             statusElement.dataset.state = state;
-            statusElement.innerHTML = state === 'connecting' 
-                ? '<div class="loading"></div>' + message
-                : message;
+            
+            if (state === 'connecting' || state === 'reconnecting' || state === 'reconnecting_attempt') {
+                statusElement.innerHTML = '<div class="loading"></div>' + message;
+            } else if (state === 'disconnected') {
+                statusElement.innerHTML = message + 
+                    '<button class="refresh-button" onclick="manualReconnect()" title="Refresh Connection">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor">' +
+                    '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+                    '<path d="M21 3v5h-5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+                    '<path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+                    '<path d="M3 21v-5h5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' +
+                    '</svg>' +
+                    '</button>';
+            } else {                statusElement.innerHTML = message;
+            }
+        }
+
+        function manualReconnect() {
+            updateStatus('reconnecting_attempt', i18n.chat.status.reconnecting_attempt);
+            
+            // Close existing WebSocket if it exists
+            if (ws) {
+                ws.close();
+            }
+            
+            // Wait a moment, then reinitialize
+            setTimeout(() => {
+                const username = localStorage.getItem('username');
+                if (username) {
+                    initializeWebSocket(username);
+                } else {
+                    window.location.href = '/';
+                }
+            }, 1000);
         }        function initializeWebSocket(username) {
             try {
                 if (ws && (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN)) {
                     return; // Already connected or connecting
-                }                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                }
+
+                // Show appropriate connecting status based on whether this is a reconnection attempt
+                if (reconnectAttempts > 0) {
+                    updateStatus('reconnecting_attempt', i18n.chat.status.reconnecting_attempt);
+                } else {
+                    updateStatus('connecting', i18n.chat.status.connecting);
+                }
+
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const lang = new URLSearchParams(window.location.search).get('lang') || 'en';                const wsURL = `${protocol}//${window.location.host}/ws/${encodeURIComponent(username)}?lang=${encodeURIComponent(lang)}`;
                 ws = new WebSocket(wsURL);
 
@@ -1461,21 +1531,21 @@
                     reconnectAttempts = 0;
                     // Reactivate UI elements
                     enableMessageInput(true);
-                };
-
-                ws.onclose = (event) => {
+                };                ws.onclose = (event) => {
                     console.log('WebSocket closed:', event.code, event.reason);
-                    updateStatus('disconnected', i18n.chat.status.disconnected);
                     enableMessageInput(false);
                     
                     // Don't reconnect if it was a normal closure
                     if (event.code !== 1000 && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+                        updateStatus('reconnecting_attempt', i18n.chat.status.reconnecting_attempt);
                         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
                         console.log(`Reconnecting in ${delay}ms... (attempt ${reconnectAttempts + 1}/${MAX_RECONNECT_ATTEMPTS})`);
                         setTimeout(() => {
                             reconnectAttempts++;
                             initializeWebSocket(username);
                         }, delay);
+                    } else {
+                        updateStatus('disconnected', i18n.chat.status.disconnected);
                     }
                 };
 
@@ -2615,9 +2685,7 @@
                     resolve(''); // Return empty string if thumbnail generation fails
                 };
                 
-                video.src = URL.createObjectURL(videoBlob);
-            });
-        }
-    </script>
+                video.src = URL.createObjectURL(videoBlob);            });
+        }    </script>
 </body>
 </html>

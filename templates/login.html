@@ -304,11 +304,34 @@
         [dir="rtl"] .theme-toggle {
             right: 1rem;
             left: auto;
-        }
-
-        @media (max-width: 480px) {
+        }        @media (max-width: 480px) {
             .container {
                 padding: 1.5rem;
+            }
+        }        .copyright {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-secondary);
+            opacity: 0.8;
+        }
+
+        .copyright a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .copyright a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            .copyright {
+                font-size: 10px;
+                margin-top: 1.5rem;
             }
         }
     </style>
@@ -353,10 +376,12 @@
             <button type="submit">{{ i18n.login.join_button }}</button>
         </form>
         <div id="installPrompt" class="install-prompt">
-            <p>Add this app to your home screen for easier access.</p>
-            <button onclick="installPWA()">{{ i18n.pwa.install }}</button>
+            <p>Add this app to your home screen for easier access.</p>            <button onclick="installPWA()">{{ i18n.pwa.install }}</button>        </div>
+        
+        <div class="copyright">
+            © 2025 <a href="https://github.com/SepehrMohammady" target="_blank">Sepehr Mohammady</a> | <a href="https://github.com/SepehrMohammady/SimpleMessenger" target="_blank">GitHub</a>
         </div>
-    </div>    <!-- Add install button -->
+    </div><!-- Add install button -->
     <button id="installButton" class="pwa-install">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M12 4v16m-8-8h16" stroke-linecap="round"/>
@@ -501,12 +526,9 @@
                 console.log(`User response to the install prompt: ${outcome}`);
                 deferredPrompt = null;
             });
-        });
-
-        window.addEventListener('appinstalled', () => {
+        });        window.addEventListener('appinstalled', () => {
             console.log('PWA was installed');
             document.getElementById('installButton').style.display = 'none';
-        });
-    </script>
+        });    </script>
 </body>
 </html>
