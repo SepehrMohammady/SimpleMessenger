@@ -66,8 +66,11 @@ A modern, secure web-based messenger application with real-time chat, video call
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/SepehrMohammady/SimpleMessenger)
 *⭐ **BEST FREE OPTION** - Full functionality with WebSockets*
 
-**Fly.io**: CLI deployment (see [DEPLOYMENT.md](DEPLOYMENT.md) for instructions)
-*Global edge deployment with excellent performance*
+**Fly.io**: One-command deployment
+```bash
+fly deploy
+```
+*See [FLY_DEPLOYMENT.md](FLY_DEPLOYMENT.md) for complete setup guide*
 
 ### **Other Deployment Options:**
 - **Docker**: Available for VPS/server deployment
